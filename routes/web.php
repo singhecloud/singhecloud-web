@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Learn\Punjabi\HomeController;
+use App\Http\Controllers\Learn\Punjabi\ReadPunjabiController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -12,6 +14,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 });
+
+Route::get('/learn/punjabi', HomeController::class)->name('learn.punjabi.home');
+Route::get('/learn/punjabi/reading', [ReadPunjabiController::class, 'index'])->name('learn.punjabi.read');
+Route::get('/learn/punjabi/reading/alphabets/{index}', [ReadPunjabiController::class, 'alphabets'])->name('learn.punjabi.read');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
