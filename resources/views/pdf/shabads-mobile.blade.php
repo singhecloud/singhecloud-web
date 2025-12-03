@@ -6,38 +6,40 @@
     body {
       font-family: 'Noto Sans Gurmukhi', sans-serif;
       font-size: {{ $panktiSize }}px;
-      line-height: 1.7;
+      line-height: 1.4;
+    }
+    .pankti {
+      font-family: 'gurmukhi';
+      text-align: justify;
+      margin-bottom: 8px;
+      padding-left: 1px;
+      padding-right: 1px;
     }
     h1, h2 {
       margin-bottom: 8px;
     }
+    
     h1 {
       font-size: {{ $panktiSize }}px;
-      padding-bottom: 6px;
-      margin-bottom: 20px;
+      padding-bottom: 2px;
+      margin-bottom: 2px;
       text-align: center;
     }
     .pankti.mangal {
       color: #2331d1ff;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
     .pankti.sirlekh {
       color: #b82525ff;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
     }
-    .pankti {
-      font-family: 'gurmukhi';
-      text-align: justify;
-      margin-bottom: 40px;
-      padding-left: 10px;
-      padding-right: 10px;
-    }
+    
     .divider {
       border: none;
       border-top: 1px solid #aaa;
-      margin: 24px 0;
+      margin: 2px 0;
     }
     .page-break {
       page-break-after: always;
@@ -73,19 +75,20 @@
     </div>
     @endforeach
 
-    <div style="width: 100%;height: 50px;"></div>
+    <div style="width: 100%;height: 20px;"></div>
     <div style="
         width: 100%;
-        height: 50px;
-        font-size: 12px;
+        height: 10px;
+        font-size: 6px;
         position: absolute;
         display: flex;
         align-items: center;
         opacity: 0.6;
         bottom: 0;
         left: 20;
+        padding-bottom: 4px;
     ">
-    <div style="margin-left: 10px;">
+    <div style="margin-left: 4px;">
         [ {{ $sectionId }} ]
     </div>
 
@@ -98,7 +101,7 @@
         {{ $serial . ' / ' . $total }}
     </div>
 
-    <div style="position: absolute; left: 90%; font-family: 'gurmukhi'">AMg: {{ $groups[0][0]->source_page }}</div>
+    <div style="position: absolute; left: 80%; font-family: 'gurmukhi'">AMg: {{ $groups[0][0]->source_page }}</div>
 </div>
 
     {{-- @if (!$loop->last) --}}

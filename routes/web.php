@@ -1,15 +1,12 @@
 <?php
 
-use App\Http\Controllers\Gurbani\GurbaniController;
-use App\Http\Controllers\Gurbani\GurbaniEReaderController;
 use App\Http\Controllers\Learn\Punjabi\HomeController;
 use App\Http\Controllers\Learn\Punjabi\ReadPunjabiController;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return Inertia::render('home');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -17,10 +14,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 });
-
-Route::get('gurbani', [GurbaniController::class, 'index'])->name('gurbani.index');
-Route::get('gurbani/ereader', [GurbaniEReaderController::class, 'index'])->name('gurbani.index');
-Route::get('gurbani/ereader/download/{type}/{serial?}', [GurbaniEReaderController::class, 'download'])->name('gurbani.index');
 
 Route::get('/learn/punjabi', HomeController::class)->name('learn.punjabi.home');
 Route::get('/learn/punjabi/reading', [ReadPunjabiController::class, 'index'])->name('learn.punjabi.read');

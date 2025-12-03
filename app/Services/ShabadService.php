@@ -16,10 +16,6 @@ class ShabadService
             set_time_limit(0);
             ini_set('max_execution_time', 0);
             return $this->printHukamNama();
-        } else {
-            for ($i = 1; $i <= 51; $i++) {
-                $this->downloadShabads($i);
-            }
         }
     }
 
@@ -396,47 +392,5 @@ class ShabadService
                 $pageSerial++;
             }
         }
-    }
-
-    public function downloadShabads(int $startSerial)
-    {
-        $result = DB::select("SELECT name_gurmukhi, name_english FROM sections WHERE id = $startSerial");
-        
-        $fileName = 'section_' . $startSerial . '_' . str_replace(' ', '_', strtolower($result[0]->name_english)) . '.pdf';
-
-        // Fetch 50 shabad ids
-        $shabads = collect(DB::select(
-            "SELECT id, order_id 
-            FROM shabads 
-            WHERE source_id = 1 
-            and section_id = ?
-            ORDER BY order_id",
-            [$startSerial]
-        ));
-
-        if ($shabads->isEmpty()) {
-            throw new NotFoundHttpException('No Shabads found.');
-        }
-
-        // Get all lines for these shabads
-        $shabadIds = $shabads->pluck('id')->toArray();
-        $lines = collect(DB::select(
-            "SELECT id, shabad_id, type_id, gurmukhi 
-            FROM lines 
-            WHERE shabad_id IN ('" . implode("','", $shabadIds) . "') 
-            ORDER BY shabad_id ASC, order_id ASC"
-        ));
-
-        // Group lines by shabad_id
-        $grouped = $lines->groupBy('shabad_id');
-
-        // Pass to Blade
-        return Pdf::view('pdf.shabads', [
-            'startSerial' => $startSerial,
-            'shabads'     => $shabads,
-            'panktis'     => $grouped,
-        ])
-        ->format('a4')
-        ->save($fileName);
     }
 }
