@@ -1,0 +1,12 @@
+@font-face {
+  font-family: "GurbaniWebThick";
+  src: url("/fonts/gurbaniwebthick.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Utility class */
+.font-gurbani {
+  font-family: "GurbaniWebThick", serif;
+}

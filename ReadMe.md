@@ -15,3 +15,11 @@ ulimit -S -n 2048
 pdfunite *.pdf index.pdf
 
 echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+
+# Audio
+
+convert mp3 to opus format
+
+```
+ffmpeg -i input.mp3 -c:a libopus -b:a 96k output.webm
+```

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Learn\Punjabi\HomeController;
 use App\Http\Controllers\Learn\Punjabi\ReadPunjabiController;
+use App\Http\Controllers\Listen\GurbaniListenController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -14,6 +15,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 });
+
+Route::get('/listen/gurbani', [GurbaniListenController::class, 'index']);
 
 Route::get('/learn/punjabi', HomeController::class)->name('learn.punjabi.home');
 Route::get('/learn/punjabi/reading', [ReadPunjabiController::class, 'index'])->name('learn.punjabi.read');
