@@ -1,6 +1,7 @@
 import "../../../css/gurbani.css";
 import { useEffect, useRef, useState } from "react";
 import { Head } from "@inertiajs/react";
+import GurbaniDisplay from "./GurbaniDisplay";
 
 interface Pankti {
   gurmukhi: string;
@@ -23,8 +24,8 @@ export default function ListenGurbani() {
   const [loadingNextAng, setLoadingNextAng] = useState(false);
 
   // Font size settings
-  const [gurbaniFontSize, setGurbaniFontSize] = useState(32);
-  const [translationFontSize, setTranslationFontSize] = useState(14);
+  const [gurbaniFontSize, setGurbaniFontSize] = useState(60);
+  const [translationFontSize, setTranslationFontSize] = useState(40);
   const [showSettings, setShowSettings] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -140,7 +141,8 @@ export default function ListenGurbani() {
     <>
       <Head title={`Listen Gurbani – Ang ${ang}`} />
 
-      <div className="min-h-screen flex flex-col justify-center px-6 pb-32 relative">
+      <div className="min-h-screen flex flex-col justify-center px-6 pb-32 relative bg-[#f6f3ee]">
+
         {/* Settings */}
         <div className="absolute top-6 right-6">
           <button
@@ -156,8 +158,8 @@ export default function ListenGurbani() {
                 <label>Gurbani Font: {gurbaniFontSize}px</label>
                 <input
                   type="range"
-                  min={16}
-                  max={72}
+                  min={10}
+                  max={150}
                   value={gurbaniFontSize}
                   onChange={(e) =>
                     setGurbaniFontSize(Number(e.target.value))
@@ -169,8 +171,8 @@ export default function ListenGurbani() {
                 <label>Translation Font: {translationFontSize}px</label>
                 <input
                   type="range"
-                  min={12}
-                  max={32}
+                  min={10}
+                  max={150}
                   value={translationFontSize}
                   onChange={(e) =>
                     setTranslationFontSize(Number(e.target.value))
@@ -182,22 +184,13 @@ export default function ListenGurbani() {
           )}
         </div>
 
-        {/* Gurbani Display */}
         {pankti && (
-          <div className="text-center space-y-4 flex-1 flex flex-col justify-center">
-            <p
-              className="font-gurbani leading-loose"
-              style={{ fontSize: `${gurbaniFontSize}px` }}
-            >
-              {pankti.gurmukhi}
-            </p>
-            <p
-              className="text-muted-foreground"
-              style={{ fontSize: `${translationFontSize}px` }}
-            >
-              {pankti.translation}
-            </p>
-          </div>
+          <GurbaniDisplay
+            gurmukhi={pankti.gurmukhi}
+            translation={pankti.translation}
+            gurbaniFontSize={gurbaniFontSize}
+            translationFontSize={translationFontSize}
+          />
         )}
 
         {/* Audio */}
