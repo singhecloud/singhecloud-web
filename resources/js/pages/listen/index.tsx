@@ -8,6 +8,7 @@ interface Pankti {
   translation: string;
   start_time: number;
   audio_source_part: number;
+  source_page: number;
 }
 
 export default function ListenGurbani() {
@@ -82,6 +83,7 @@ export default function ListenGurbani() {
       const next = panktis[currentIndex + 1];
       if (next && time >= next.start_time) {
         setCurrentIndex((i) => i + 1);
+        setInputAng(next.source_page);
       }
 
       // Preload next Ang if nearing end of loaded panktis
@@ -141,13 +143,13 @@ export default function ListenGurbani() {
     <>
       <Head title={`Listen Gurbani – Ang ${ang}`} />
 
-      <div className="min-h-screen flex flex-col justify-center px-6 pb-32 relative bg-[#f6f3ee]">
+      <div className="min-h-screen flex flex-col justify-center px-6 pb-32 relative" style={{background: '#000000'}}>
 
         {/* Settings */}
         <div className="absolute top-6 right-6">
           <button
             onClick={() => setShowSettings((s) => !s)}
-            className="text-black text-2xl p-2 rounded hover:text-gray-500"
+            className="text-white text-2xl p-4 rounded hover:text-gray-500"
           >
             &#9776;
           </button>
@@ -218,7 +220,7 @@ export default function ListenGurbani() {
               />
               <button
                 onClick={goToAng}
-                className="bg-primary px-3 py-1 rounded"
+                className="bg-primary px-3 py-1 rounded text-black"
               >
                 Go
               </button>
@@ -227,7 +229,7 @@ export default function ListenGurbani() {
             <div className="absolute left-1/2 -translate-x-1/2">
               <button
                 onClick={togglePlay}
-                className="bg-white px-6 py-2 rounded-full"
+                className="bg-white px-6 py-2 rounded-full text-black"
               >
                 {playing ? "Pause" : "Play"}
               </button>

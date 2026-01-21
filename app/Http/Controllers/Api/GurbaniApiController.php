@@ -13,7 +13,7 @@ class GurbaniApiController
         $panktis = collect(DB::select(
             "SELECT
             audio_source_part,
-            lines.id, lines.gurmukhi, translation, additional_information, start_time, end_time
+            lines.id, lines.gurmukhi, translation, additional_information, source_page, start_time, end_time
             FROM lines
             INNER JOIN audio_transcriptions ON lines.id = audio_transcriptions.line_id
             LEFT JOIN translations ON translations.line_id = lines.id
