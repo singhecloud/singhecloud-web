@@ -26,79 +26,158 @@ class ExportAudioAngs extends Command
      */
     public function handle()
     {
-        // Fetch the audio parts and their associated Angs
-        $audioParts = collect(DB::select(
-            "SELECT DISTINCT audio_source_part
+        // Fetch distinct Angs
+        $angs = collect(DB::select(
+            "SELECT DISTINCT source_page
             FROM lines
             INNER JOIN audio_transcriptions ON lines.id = audio_transcriptions.line_id
-            WHERE audio_source_part IS NOT NULL"
+            ORDER BY source_page"
         ));
 
-        if ($audioParts->isEmpty()) {
-            $this->error("No audio parts found.");
+        if ($angs->isEmpty()) {
+            $this->error("No Angs found.");
             return;
         }
 
-        // Loop through each audio part
-        foreach ($audioParts as $audioPart) {
-            $this->info("Processing Part {$audioPart->audio_source_part}...");
+        foreach ($angs as $angRow) {
+            $ang = $angRow->source_page;
+            $this->info("Processing Ang {$ang}...");
 
-            // Fetch all the panktis for this part, grouped by Ang
-            $angs = collect(DB::select(
-                "SELECT source_page, audio_source_part, start_time, end_time
-                FROM lines
-                INNER JOIN audio_transcriptions ON lines.id = audio_transcriptions.line_id
-                WHERE audio_source_part = ?
-                ORDER BY source_page, lines.order_id",
-                [$audioPart->audio_source_part]
+            // Fetch all lines for this Ang across all parts
+            $rows = collect(DB::select(
+                "SELECT l.id AS line_id,
+                        audio_source_part,
+                        l.order_id,
+                        at.start_time,
+                        at.end_time
+                FROM lines l
+                INNER JOIN audio_transcriptions at ON l.id = at.line_id
+                WHERE l.source_page = ?
+                ORDER BY audio_source_part, l.order_id",
+                [$ang]
             ));
 
-            // Group panktis by Ang
-            $angsGrouped = $angs->groupBy('source_page');
+            if ($rows->isEmpty()) {
+                $this->warn("No audio rows for Ang {$ang}, skipping.");
+                continue;
+            }
 
-            // Process each Ang
-            foreach ($angsGrouped as $ang => $panktis) {
-                $this->info("Processing Ang {$ang}...");
+            // Group by audio part
+            $partsGrouped = $rows->groupBy('audio_source_part');
 
-                // Calculate the min start_time and max end_time for the whole Ang
-                $minStartTime = $panktis->min('start_time');
-                $maxEndTime = $panktis->max('end_time');
+            // Track part offsets inside Ang timeline
+            $partOffsets = [];
+            $currentOffset = 0;
 
-                // Output file name
-                $outputFileName = "sehaj_path_bhai_sarwan_singh_ang{$ang}.webm";
+            // Temp files for ffmpeg concat
+            $tempFiles = [];
 
-                // Path to the original part file (using the audio source part)
-                $audioFileName = "sehaj_path_bhai_sarwan_singh_part{$audioPart->audio_source_part}.webm";
-                $inputFilePath = public_path("audio/{$audioFileName}");
-                $outputFilePath = public_path("audio/angs/{$outputFileName}");
+            DB::beginTransaction();
 
-                // Check if the input file exists
-                if (!file_exists($inputFilePath)) {
-                    $this->error("Input file {$audioFileName} not found. Skipping Ang {$ang}.");
-                    continue;
+            try {
+                foreach ($partsGrouped as $part => $panktis) {
+
+                    $partStart = $panktis->min('start_time');
+                    $partEnd   = $panktis->max('end_time');
+                    $partDuration = $partEnd - $partStart;
+
+                    $partOffsets[$part] = [
+                        'offset' => $currentOffset,
+                        'start'  => $partStart,
+                    ];
+
+                    // ---- FFmpeg extraction for this part ----
+                    $inputFile = public_path("audio/sehaj_path_bhai_sarwan_singh_part{$part}.webm");
+
+                    if (!file_exists($inputFile)) {
+                        throw new \Exception("Missing audio part file: {$inputFile}");
+                    }
+
+                    $tempOutput = public_path("audio/tmp/ang{$ang}_part{$part}.webm");
+                    $tempFiles[] = $tempOutput;
+
+                    $cmd = sprintf(
+                        'ffmpeg -y -i "%s" -ss %s -t %s "%s"',
+                        $inputFile,
+                        $partStart,
+                        $partDuration,
+                        $tempOutput
+                    );
+
+                    exec($cmd, $out, $code);
+
+                    if ($code !== 0) {
+                        throw new \Exception("FFmpeg failed for Ang {$ang}, part {$part}");
+                    }
+
+                    $currentOffset += $partDuration;
                 }
 
-                // Calculate the duration for the segment (max end_time - min start_time)
-                $duration = $maxEndTime - $minStartTime;
+                // ---- Calculate & persist per-line Ang timing ----
+                foreach ($rows as $row) {
+                    $part = $row->audio_source_part;
 
-                // Run ffmpeg command to split the audio for this Ang
-                $ffmpegCommand = "ffmpeg -i {$inputFilePath} -ss {$minStartTime} -t {$duration} {$outputFilePath}";
+                    $relativeStart = $row->start_time - $partOffsets[$part]['start'];
+                    $duration      = $row->end_time - $row->start_time;
 
-                // Execute the command
-                $output = [];
-                $resultCode = null;
-                exec($ffmpegCommand, $output, $resultCode);
+                    $lineStart = $partOffsets[$part]['offset'] + $relativeStart;
+                    $lineEnd   = $lineStart + $duration;
 
-                // Check result of the command
-                if ($resultCode === 0) {
-                    $this->info("Successfully exported Ang {$ang} to {$outputFileName}");
+                    DB::update(
+                        "UPDATE audio_transcriptions
+                        SET line_start_time = ?, line_end_time = ?
+                        WHERE line_id = ?",
+                        [$lineStart, $lineEnd, $row->line_id]
+                    );
+                }
+
+                // ---- Final Ang output ----
+                $finalOutput = public_path(
+                    "audio/angs/sehaj_path_bhai_sarwan_singh_ang{$ang}.webm"
+                );
+
+                // Single part → move file
+                if (count($tempFiles) === 1) {
+                    rename($tempFiles[0], $finalOutput);
                 } else {
-                    $this->error("Failed to export Ang {$ang}. Error: " . implode("\n", $output));
+                    // Multi-part → concat
+                    $listFile = public_path("audio/tmp/ang{$ang}_list.txt");
+
+                    $listContent = collect($tempFiles)
+                        ->map(fn ($file) => "file '{$file}'")
+                        ->implode("\n");
+
+                    file_put_contents($listFile, $listContent);
+
+                    $concatCmd = sprintf(
+                        'ffmpeg -y -f concat -safe 0 -i "%s" -c copy "%s"',
+                        $listFile,
+                        $finalOutput
+                    );
+
+                    exec($concatCmd, $out, $code);
+
+                    if ($code !== 0) {
+                        throw new \Exception("Concat failed for Ang {$ang}");
+                    }
+
+                    @unlink($listFile);
                 }
+
+                DB::commit();
+                $this->info("Ang {$ang} exported & line timings saved.");
+
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                $this->error("Failed Ang {$ang}: " . $e->getMessage());
+            }
+
+            // Cleanup temp files
+            foreach ($tempFiles as $file) {
+                @unlink($file);
             }
         }
 
-        // Final completion message
-        $this->info("Audio export for all Angs completed.");
+        $this->info("All Angs processed successfully 🎧");
     }
 }
