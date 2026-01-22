@@ -12,28 +12,30 @@ class ImportAudioTranscriptions extends Command
      *
      * @var string
      */
-    protected $signature = 'app:import-audio-transcriptions';
+    protected $signature = 'app:import-audio-transcriptions {file=audio_transcriptions_export.json}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Import audio_transcriptions table from JSON file in storage folder';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $file = $this->argument('file');
+        // Use the file from storage by default
+        $fileName = $this->argument('file');
+        $file = storage_path($fileName);
 
         if (!file_exists($file)) {
-            $this->error("File {$file} does not exist.");
+            $this->error("File {$fileName} does not exist in storage folder.");
             return 1;
         }
 
-        $this->info("Reading file {$file}...");
+        $this->info("Reading file {$fileName}...");
         $data = json_decode(file_get_contents($file), true);
 
         if (empty($data)) {
@@ -47,7 +49,7 @@ class ImportAudioTranscriptions extends Command
             // Optional: clear table first
             DB::table('audio_transcriptions')->truncate();
 
-            // Insert in chunks
+            // Insert in chunks to avoid memory issues
             collect($data)->chunk(500)->each(function ($chunk) {
                 DB::table('audio_transcriptions')->insert($chunk->toArray());
             });
