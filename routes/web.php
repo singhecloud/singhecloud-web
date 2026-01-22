@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\DashboardVisitorController;
 use App\Http\Controllers\Learn\Punjabi\HomeController;
 use App\Http\Controllers\Learn\Punjabi\ReadPunjabiController;
 use App\Http\Controllers\Listen\GurbaniListenController;
@@ -14,6 +15,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    Route::get('/dashboard/visitors', [DashboardVisitorController::class, 'index']);
 });
 
 Route::get('/listen/gurbani', [GurbaniListenController::class, 'index']);

@@ -13,23 +13,22 @@ export default function GurbaniDisplay({
 }: Props) {
   const renderGurbani = () => {
     return gurmukhi.split(" ").map((word, index) => {
-      let className = "";
+      let color = "rgb(255, 255, 255)"; // default white
       let cleanWord = word;
 
       // Full vishraam (;)
       if (word.endsWith(";")) {
-        className = "text-red-800";
+        color = "rgb(220, 38, 38)"; // red-700 equivalent
         cleanWord = word.slice(0, -1);
       }
-
-      // Light vishraam (,)
+      // Light vishraam (,) or period (.)
       else if (word.endsWith(",") || word.endsWith(".")) {
-        className = "text-blue-900";
+        color = "rgb(29, 78, 216)"; // blue-700 equivalent
         cleanWord = word.slice(0, -1);
       }
 
       return (
-        <span key={index} className={className}>
+        <span key={index} style={{ color }}>
           {cleanWord}{" "}
         </span>
       );
@@ -46,7 +45,7 @@ export default function GurbaniDisplay({
       </p>
 
       <p
-        className="text-muted-foreground"
+        className="text-gray-300"
         style={{ fontSize: `${translationFontSize}px` }}
       >
         {translation}
