@@ -2,5 +2,8 @@
 
 use App\Http\Controllers\Api\GurbaniApiController;
 use Illuminate\Support\Facades\Route;
+use Shetabit\Visitor\Middlewares\LogVisits;
 
-Route::get('/gurbani/angs/{ang}', [GurbaniApiController::class, 'getByAng']);
+Route::middleware([LogVisits::class])->group(function () {
+    Route::get('/gurbani/angs/{ang}', [GurbaniApiController::class, 'getByAng']);
+});
