@@ -12,7 +12,7 @@ class VisitorController extends Controller
     {
         $perPage = $request->integer('perPage', 25);
         $page    = $request->integer('page', 1);
-        $sort    = $request->get('sort', 'created_at');
+        $sort    = $request->get('sort', 'id');
         $order   = $request->get('order', 'DESC');
 
         $query = Visit::query();

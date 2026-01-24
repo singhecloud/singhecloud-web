@@ -51,7 +51,7 @@ export default function VisitorsPage() {
   const [pageSize, setPageSize] = useState(25);
 
   const [sortModel, setSortModel] = useState<GridSortModel>([
-    { field: 'visited_at', sort: 'desc' },
+    { field: 'id', sort: 'desc' },
   ]);
 
   const [filters, setFilters] = useState({
