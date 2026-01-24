@@ -10,14 +10,14 @@
     font-family: "Open Gurbani Akhar";
     font-style: normal;
     font-weight: 400;
-    src: url("./fonts/OpenGurbaniAkhar-Black.otf") format("opentype");
+    src: url("/fonts/OpenGurbaniAkhar-Black.otf") format("opentype");
 }
 
 @font-face {
     font-family: "Open Anmol Uni";
     font-style: normal;
     font-weight: 900;
-    src: url("./fonts/OpenAnmolUni-Bold.otf") format("opentype");
+    src: url("/fonts/OpenAnmolUni-Bold.otf") format("opentype");
 }
 
 /* Utility class */
