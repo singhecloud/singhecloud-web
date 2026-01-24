@@ -5,9 +5,9 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Users } from 'lucide-react';
+import { Ban, BookOpen, Folder, LayoutGrid, Users } from 'lucide-react';
 import AppLogo from './app-logo';
-import { visitors } from '@/routes/admin';
+import { blockIps, visitors } from '@/routes/admin';
 
 const mainNavItems: NavItem[] = [
     {
@@ -20,6 +20,11 @@ const mainNavItems: NavItem[] = [
         href: visitors(),
         icon: Users,
     },
+    {
+        title: 'Block Ips',
+        href: blockIps(),
+        icon: Ban
+    }
 ];
 
 const footerNavItems: NavItem[] = [

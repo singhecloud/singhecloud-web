@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\BlockedIpController;
 use App\Http\Controllers\Api\Admin\VisitorController;
 use App\Http\Controllers\Api\DashboardVisitorController;
 use App\Http\Controllers\Learn\Punjabi\HomeController;
@@ -19,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard/visitors', [DashboardVisitorController::class, 'index']);
     Route::get('/visitors', [VisitorController::class, 'index']);
+    Route::apiResource('blocked-ips', BlockedIpController::class);
 });
 
 Route::middleware(['auth', 'verified'])
@@ -28,6 +30,10 @@ Route::middleware(['auth', 'verified'])
         Route::get('/visitors', function () {
             return Inertia::render('admin/visitors');
         })->name('visitors');
+
+        Route::get('/block-ips', function () {
+            return Inertia::render('admin/blockIps');
+        })->name('blockIps');
     });
 
 Route::get('/listen', [GurbaniListenController::class, 'index']);
