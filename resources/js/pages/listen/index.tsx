@@ -90,8 +90,9 @@ export default function ListenGurbani() {
     if (!audio.src.includes(audioFile)) {
       audio.src = audioFile;
       audio.load();
-      audio.play();
-      setPlaying(true);
+      audio.play()
+      .then(() => setPlaying(true))
+      .catch(() => setPlaying(false));
     }
 
     const onTimeUpdate = () => {
@@ -101,14 +102,12 @@ export default function ListenGurbani() {
       }
     };
 
-    const onEnded = () => setAng(a => Math.min(a + 1, 1430));
-
     audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("ended", nextAng);
 
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("ended", nextAng);
     };
   }, [panktis, currentIndex, ang]);
 
@@ -120,16 +119,27 @@ export default function ListenGurbani() {
   };
 
   const goToAng = () => {
-    const val = parseInt(inputAng, 10);
-    if (val < 1 || val > 1430) return alert("Invalid Ang");
+    let val = parseInt(inputAng, 10);
+    if (val < 1 || val > 1430) {
+      val = 1;
+    };
     setAng(val);
     localStorage.setItem("currentAng", val.toString());
   };
 
-  const nextAng = () => { setAng(a => Math.min(a + 1, 1430)); setInputAng(prev => (Math.min(parseInt(prev) + 1, 1430)).toString()); };
-  const prevAng = () => { setAng(a => Math.max(a - 1, 1)); setInputAng(prev => (Math.max(parseInt(prev) - 1, 1)).toString()); };
-  const add10Angs = () => { setAng(a => Math.min(a + 10, 1430)); setInputAng(prev => (Math.min(parseInt(prev) + 10, 1430)).toString()); };
-  const subtract10Angs = () => { setAng(a => Math.max(a - 10, 1)); setInputAng(prev => (Math.max(parseInt(prev) - 10, 1)).toString()); };
+  const showAng = (val: number) => {
+    if (val < 1 || val > 1430) {
+      val = 1;
+    };
+    setAng(val);
+    setInputAng(val + "");
+    localStorage.setItem("currentAng", val.toString());
+  };
+
+  const nextAng = () => { showAng(Math.min(ang + 1, 1430)); };
+  const prevAng = () => { showAng(Math.max(ang - 1, 1)); };
+  const add10Angs = () => { showAng(Math.min(ang + 10, 1430));};
+  const subtract10Angs = () => { showAng(Math.max(ang - 10, 1)); };
 
   const pankti = panktis[currentIndex];
 

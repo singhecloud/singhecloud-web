@@ -46,7 +46,7 @@ export default function GurbaniDisplay({
 
       <p
         className="font-punjabi"
-        style={{ fontSize: `${translationFontSize}px`, color: '#e0e0e0' }}
+        style={{ fontSize: `${translationFontSize}px`, color: '#c0c0c0', marginTop: '10px' }}
       >
         {translation}
       </p>
