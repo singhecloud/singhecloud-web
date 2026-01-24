@@ -43,6 +43,7 @@ class VisitorController extends Controller
             $q->where('url', 'not like', '%/admin%')
             ->where('url', 'not like', '%/dashboard%')
             ->where('url', 'not like', '%/logout%')
+            ->where('url', 'not like', '%/visitors%')
         );
 
         /* --------------------
