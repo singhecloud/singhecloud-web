@@ -6,7 +6,27 @@
   font-display: swap;
 }
 
+@font-face {
+    font-family: "Open Gurbani Akhar";
+    font-style: normal;
+    font-weight: 400;
+    src: url("./fonts/OpenGurbaniAkhar-Black.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "Open Anmol Uni";
+    font-style: normal;
+    font-weight: 900;
+    src: url("./fonts/OpenAnmolUni-Bold.otf") format("opentype");
+}
+
 /* Utility class */
 .font-gurbani {
-  font-family: "GurbaniWebThick", serif;
+  font-family: "Open Gurbani Akhar";
+  font-weight: 900;
+}
+
+.font-punjabi {
+  font-family: "OpenAnmolUni-Bold";
+  font-weight: 900;
 }

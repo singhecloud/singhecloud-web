@@ -21,11 +21,10 @@ class ExportAudioAngs extends Command
      */
     protected $description = 'Export audio segments for each Ang from the source audio file based on start_time and end_time from panktis.';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
+        $bitrates = ['48k', '64k'];
+
         // Fetch distinct Angs
         $angs = collect(DB::select(
             "SELECT DISTINCT source_page
@@ -43,7 +42,6 @@ class ExportAudioAngs extends Command
             $ang = $angRow->source_page;
             $this->info("Processing Ang {$ang}...");
 
-            // Fetch all lines for this Ang across all parts
             $rows = collect(DB::select(
                 "SELECT l.id AS line_id,
                         audio_source_part,
@@ -62,19 +60,21 @@ class ExportAudioAngs extends Command
                 continue;
             }
 
-            // Group by audio part
             $partsGrouped = $rows->groupBy('audio_source_part');
 
-            // Track part offsets inside Ang timeline
             $partOffsets = [];
             $currentOffset = 0;
 
-            // Temp files for ffmpeg concat
+            // Temp files per bitrate
             $tempFiles = [];
+            foreach ($bitrates as $bitrate) {
+                $tempFiles[$bitrate] = [];
+            }
 
             DB::beginTransaction();
 
             try {
+                // ---- Extract parts per bitrate ----
                 foreach ($partsGrouped as $part => $panktis) {
 
                     $partStart = $panktis->min('start_time');
@@ -86,28 +86,38 @@ class ExportAudioAngs extends Command
                         'start'  => $partStart,
                     ];
 
-                    // ---- FFmpeg extraction for this part ----
-                    $inputFile = public_path("audio/sehaj_path_bhai_sarwan_singh_part{$part}.webm");
+                    $inputFile = resource_path(
+                        "audio/sehaj_paath/sehaj_path_bhai_sarwan_singh_part{$part}.mp3"
+                    );
 
                     if (!file_exists($inputFile)) {
                         throw new \Exception("Missing audio part file: {$inputFile}");
                     }
 
-                    $tempOutput = public_path("audio/tmp/ang{$ang}_part{$part}.webm");
-                    $tempFiles[] = $tempOutput;
+                    foreach ($bitrates as $bitrate) {
 
-                    $cmd = sprintf(
-                        'ffmpeg -y -i "%s" -ss %s -t %s "%s"',
-                        $inputFile,
-                        $partStart,
-                        $partDuration,
-                        $tempOutput
-                    );
+                        $tmpDir = public_path("audio/tmp/{$bitrate}");
+                        if (!is_dir($tmpDir)) {
+                            mkdir($tmpDir, 0775, true);
+                        }
 
-                    exec($cmd, $out, $code);
+                        $tempOutput = "{$tmpDir}/ang{$ang}_part{$part}.webm";
+                        $tempFiles[$bitrate][] = $tempOutput;
 
-                    if ($code !== 0) {
-                        throw new \Exception("FFmpeg failed for Ang {$ang}, part {$part}");
+                        $cmd = sprintf(
+                            'ffmpeg -y -ss %s -i "%s" -t %s -vn -c:a libopus -b:a %s -application voip "%s" 2>&1',
+                            $partStart,
+                            $inputFile,
+                            $partDuration,
+                            $bitrate,
+                            $tempOutput
+                        );
+
+                        exec($cmd, $out, $code);
+
+                        if ($code !== 0) {
+                            throw new \Exception("FFmpeg failed for Ang {$ang}, part {$part}, {$bitrate}");
+                        }
                     }
 
                     $currentOffset += $partDuration;
@@ -131,50 +141,59 @@ class ExportAudioAngs extends Command
                     );
                 }
 
-                // ---- Final Ang output ----
-                $finalOutput = public_path(
-                    "audio/angs/sehaj_path_bhai_sarwan_singh_ang{$ang}.webm"
-                );
+                // ---- Final Ang output per bitrate ----
+                foreach ($bitrates as $bitrate) {
 
-                // Single part → move file
-                if (count($tempFiles) === 1) {
-                    rename($tempFiles[0], $finalOutput);
-                } else {
-                    // Multi-part → concat
-                    $listFile = public_path("audio/tmp/ang{$ang}_list.txt");
-
-                    $listContent = collect($tempFiles)
-                        ->map(fn ($file) => "file '{$file}'")
-                        ->implode("\n");
-
-                    file_put_contents($listFile, $listContent);
-
-                    $concatCmd = sprintf(
-                        'ffmpeg -y -f concat -safe 0 -i "%s" -c copy "%s"',
-                        $listFile,
-                        $finalOutput
-                    );
-
-                    exec($concatCmd, $out, $code);
-
-                    if ($code !== 0) {
-                        throw new \Exception("Concat failed for Ang {$ang}");
+                    $finalDir = public_path("audio/angs/{$bitrate}");
+                    if (!is_dir($finalDir)) {
+                        mkdir($finalDir, 0775, true);
                     }
 
-                    @unlink($listFile);
+                    $finalOutput =
+                        "{$finalDir}/sehaj_path_bhai_sarwan_singh_ang{$ang}.webm";
+
+                    $files = $tempFiles[$bitrate];
+
+                    if (count($files) === 1) {
+                        rename($files[0], $finalOutput);
+                    } else {
+                        $listFile = public_path("audio/tmp/ang{$ang}_{$bitrate}_list.txt");
+
+                        $listContent = collect($files)
+                            ->map(fn ($file) => "file '{$file}'")
+                            ->implode("\n");
+
+                        file_put_contents($listFile, $listContent);
+
+                        $concatCmd = sprintf(
+                            'ffmpeg -y -f concat -safe 0 -i "%s" -c copy "%s" 2>&1',
+                            $listFile,
+                            $finalOutput
+                        );
+
+                        exec($concatCmd, $out, $code);
+
+                        if ($code !== 0) {
+                            throw new \Exception("Concat failed for Ang {$ang} ({$bitrate})");
+                        }
+
+                        @unlink($listFile);
+                    }
                 }
 
                 DB::commit();
-                $this->info("Ang {$ang} exported & line timings saved.");
+                $this->info("Ang {$ang} exported (48k + 64k) & line timings saved.");
 
             } catch (\Throwable $e) {
                 DB::rollBack();
                 $this->error("Failed Ang {$ang}: " . $e->getMessage());
             }
 
-            // Cleanup temp files
-            foreach ($tempFiles as $file) {
-                @unlink($file);
+            // ---- Cleanup temp files ----
+            foreach ($tempFiles as $files) {
+                foreach ($files as $file) {
+                    @unlink($file);
+                }
             }
         }
 

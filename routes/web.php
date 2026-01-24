@@ -19,7 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard/visitors', [DashboardVisitorController::class, 'index']);
 });
 
-Route::get('/listen/gurbani', [GurbaniListenController::class, 'index']);
+Route::get('/listen', [GurbaniListenController::class, 'index']);
 
 Route::get('/learn/punjabi', HomeController::class)->name('learn.punjabi.home');
 Route::get('/learn/punjabi/reading', [ReadPunjabiController::class, 'index'])->name('learn.punjabi.read');

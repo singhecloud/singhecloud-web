@@ -26,3 +26,5 @@ yarn-error.log
 /.vscode
 /.zed
 public/*.pdf
+public/audio
+resources/audio
