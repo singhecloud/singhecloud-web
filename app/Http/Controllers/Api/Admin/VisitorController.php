@@ -37,6 +37,15 @@ class VisitorController extends Controller
         );
 
         /* --------------------
+         | Exclude Admin URLs
+         |--------------------*/
+        $query->when($request->exclude_admin, fn ($q) =>
+            $q->where('url', 'not like', '%/admin%')
+            ->where('url', 'not like', '%/dashboard%')
+            ->where('url', 'not like', '%/logout%')
+        );
+
+        /* --------------------
          | Select Filters
          |--------------------*/
         $query->when($request->browser, fn ($q) =>
