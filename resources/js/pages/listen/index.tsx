@@ -146,7 +146,7 @@ export default function ListenGurbani() {
         >
           <button
             onClick={() => setShowSettings(s => !s)}
-            className="text-white text-2xl p-4 hover:text-gray-500"
+            className="text-black text-2xl p-3 hover:text-gray-500 bg-gray-200"
           >
             &#9776; {showSettings ? 'Close Settings' : 'Settings'}
           </button>
