@@ -89,6 +89,7 @@ export default function ListenGurbani() {
 
     if (!audio.src.includes(audioFile)) {
       audio.src = audioFile;
+      audio.playbackRate = 0.85;
       audio.load();
       audio.play()
       .then(() => setPlaying(true))
@@ -114,6 +115,7 @@ export default function ListenGurbani() {
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
+    audio.playbackRate = 0.85;
     playing ? audio.pause() : audio.play();
     setPlaying(!playing);
   };
