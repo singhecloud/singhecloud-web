@@ -2,6 +2,7 @@ import "../../../css/gurbani.css";
 import { useEffect, useRef, useState } from "react";
 import { Head } from "@inertiajs/react";
 import GurbaniDisplay from "./GurbaniDisplay";
+import { Pause, Play } from "lucide-react";
 
 interface Pankti {
   gurmukhi: string;
@@ -34,6 +35,17 @@ export default function ListenGurbani() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const updateFontSize = (type: string, value: number) => {
+    localStorage.setItem(type + "FontSize", value + "");
+    if (type === "gurbani") {
+      setGurbaniFontSize(value);
+    } else {
+      setTranslationFontSize(value);
+    }
+
+    resetInactivity();
+  };
 
   const resetInactivity = () => {
     setUiVisible(true);
@@ -184,13 +196,13 @@ export default function ListenGurbani() {
                     type="range"
                     min={10}
                     max={150}
-                    value={gurbaniFontSize}
-                    onChange={e => setGurbaniFontSize(+e.target.value)}
+                    value={translationFontSize}
+                    onChange={e => updateFontSize("gurbani", (parseInt(e.target.value) + 1))}
                     className="h-6 sm:h-8 cursor-pointer flex-grow"
                   />
                   <div className="flex flex-col gap-1">
-                    <button onClick={() => setGurbaniFontSize(f => Math.min(f + 1, 150))} className="bg-white text-black px-4 py-2 rounded text-xl sm:text-2xl">+</button>
-                    <button onClick={() => setGurbaniFontSize(f => Math.max(f - 1, 10))} className="bg-white text-black px-4 py-2 rounded text-xl sm:text-2xl">−</button>
+                    <button onClick={() => updateFontSize("gurbani", Math.min(gurbaniFontSize + 1, 150))} className="bg-white text-black px-4 py-2 lg:px-8 lg:py-6 lg:text-4xl rounded text-xl sm:text-2xl">+</button>
+                    <button onClick={() => updateFontSize("gurbani", Math.max(gurbaniFontSize - 1, 10))} className="bg-white text-black px-4 py-2 lg:px-8 lg:py-6 lg:text-4xl rounded text-xl sm:text-2xl">-</button>
                   </div>
                 </div>
               </div>
@@ -204,12 +216,12 @@ export default function ListenGurbani() {
                     min={10}
                     max={150}
                     value={translationFontSize}
-                    onChange={e => setTranslationFontSize(+e.target.value)}
+                    onChange={e => updateFontSize("translation", +e.target.value)}
                     className="h-6 sm:h-8 cursor-pointer flex-grow"
                   />
                   <div className="flex flex-col gap-1">
-                    <button onClick={() => setTranslationFontSize(f => Math.min(f + 1, 150))} className="bg-white text-black px-4 py-2 rounded text-xl sm:text-2xl">+</button>
-                    <button onClick={() => setTranslationFontSize(f => Math.max(f - 1, 10))} className="bg-white text-black px-4 py-2 rounded text-xl sm:text-2xl">−</button>
+                    <button onClick={() => updateFontSize("translation", Math.min(translationFontSize + 1, 150))} className="bg-white text-black px-4 py-2 lg:px-8 lg:py-6 lg:text-4xl rounded text-xl sm:text-2xl">+</button>
+                    <button onClick={() => updateFontSize("translation", Math.max(translationFontSize - 1, 10))} className="bg-white text-black px-4 py-2 lg:px-8 lg:py-6 lg:text-4xl rounded text-xl sm:text-2xl">-</button>
                   </div>
                 </div>
               </div>
@@ -236,49 +248,52 @@ export default function ListenGurbani() {
           }`}
         >
           {/* Progress Bar */}
-          <div className="w-full h-2 bg-gray-700 rounded-full mb-2">
+          <div className="w-full h-2 bg-gray-700 rounded-full mb-2 lg:mt-8">
             <div className="h-2 bg-white" style={{ width: `${progress}%` }} />
           </div>
 
           {/* Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3 sm:gap-0">
             {/* Left Section */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-white">
-              <span className="font-gurbani text-lg sm:text-xl">AMg</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-white lg:my-8">
+              <span className="font-gurbani text-lg sm:text-xl lg:text-4xl">AMg</span>
               <input
                 type="text"
                 value={inputAng}
                 onChange={e => setInputAng(e.target.value)}
-                className="w-16 sm:w-20 px-2 py-1 rounded text-black bg-white text-sm sm:text-xl"
+                className="w-16 sm:w-20 px-2 py-1 rounded text-black bg-white text-sm sm:text-xl lg:text-4xl"
                 maxLength={4}
               />
               <button
-                className="bg-white px-3 py-1 rounded text-black text-sm sm:text-base"
+                className="bg-white px-3 py-1 rounded text-black text-sm sm:text-base lg:text-2xl"
                 onClick={goToAng}
               >
                 Go
               </button>
               <div className="flex items-center gap-1 sm:gap-2">
-                <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base" onClick={prevAng}>Prev</button>
-                <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base" onClick={nextAng}>Next</button>
+                <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base lg:text-2xl" onClick={prevAng}>Prev</button>
+                <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base lg:text-2xl" onClick={nextAng}>Next</button>
               </div>
             </div>
 
             {/* Center Section */}
             <div className="mx-auto sm:mx-0">
               <button
-                className="bg-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-black text-base sm:text-lg"
+                className="bg-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-black
+                          text-base sm:text-lg lg:text-2xl
+                          flex items-center gap-2"
                 onClick={togglePlay}
               >
+                {!playing && <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" /> }
+                {playing && <Pause className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" /> }
                 {playing ? "Pause" : "Play"}
               </button>
             </div>
 
             {/* Right Section */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-white justify-end">
-              <span className="text-sm sm:text-base">+10 Angs</span>
-              <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base" onClick={subtract10Angs}>-10</button>
-              <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base" onClick={add10Angs}>+10</button>
+              <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base lg:text-xl font-gurbani" onClick={subtract10Angs}>10 AMg ip~Cy</button>
+              <button className="bg-white px-2 py-1 rounded text-black text-sm sm:text-base lg:text-xl font-gurbani" onClick={add10Angs}>10 AMg A~gy</button>
             </div>
           </div>
         </div>
