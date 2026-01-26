@@ -147,7 +147,7 @@ export default function ListenGurbani() {
 
   return (
     <>
-      <Head title={`Listen Gurbani – Ang ${ang}`} />
+      <Head title={`Listen Gurbani - Ang ${ang}`} />
 
       <div className="min-h-screen flex flex-col justify-center px-6 pb-32 relative bg-black">
         {/* SETTINGS BUTTON */}

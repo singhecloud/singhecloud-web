@@ -42,9 +42,5 @@ Route::get('/learn/punjabi', HomeController::class)->name('learn.punjabi.home');
 Route::get('/learn/punjabi/reading', [ReadPunjabiController::class, 'index'])->name('learn.punjabi.read');
 Route::get('/learn/punjabi/reading/alphabets/{index}', [ReadPunjabiController::class, 'alphabets'])->name('learn.punjabi.read');
 
-Route::get('/test', function () {
-    
-});
-
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
