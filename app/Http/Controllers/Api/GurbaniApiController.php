@@ -9,7 +9,7 @@ class GurbaniApiController
     public function getByAng($ang)
     {
         // Ensure ang is within valid range
-        if ($ang < 1 || $ang > 120) {
+        if ($ang < 1 || $ang > 150) {
             return;
         }
 
