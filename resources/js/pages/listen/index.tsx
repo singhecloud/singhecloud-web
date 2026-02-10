@@ -35,6 +35,8 @@ export default function ListenGurbani() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   const updateFontSize = (type: string, value: number) => {
     localStorage.setItem(type + "FontSize", value + "");
@@ -92,20 +94,47 @@ export default function ListenGurbani() {
     return () => { cancelled = true; };
   }, [ang]);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audioContextRef.current) return;
+
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    const ctx = new AudioCtx();
+    audioContextRef.current = ctx;
+
+    const source = ctx.createMediaElementSource(audio);
+    const gain = ctx.createGain();
+
+    gain.gain.value = 1.5;
+
+    source.connect(gain).connect(ctx.destination);
+    gainNodeRef.current = gain;
+
+    return () => {
+      ctx.close();
+    };
+  }, []);
+
+
   // Audio handling
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !panktis.length) return;
 
-    const audioFile = `/audio/angs/48k/sehaj_path_bhai_sarwan_singh_ang${ang}.webm`;
+    const audioFile = `/audio/angs/64k/sehaj_path_bhai_sarwan_singh_ang${ang}.webm`;
 
     if (!audio.src.includes(audioFile)) {
       audio.src = audioFile;
-      audio.playbackRate = 0.85;
+      audio.playbackRate = 0.9;
+      audio.preservesPitch = true;
+      audio.muted = false;
       audio.load();
+      audio.preload = "auto";
       audio.play()
-      .then(() => setPlaying(true))
-      .catch(() => setPlaying(false));
+        .then(() => setPlaying(true))
+        .catch(() => setPlaying(false));
     }
 
     const onTimeUpdate = () => {
@@ -124,10 +153,15 @@ export default function ListenGurbani() {
     };
   }, [panktis, currentIndex, ang]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.playbackRate = 0.85;
+
+    if (audioContextRef.current?.state === "suspended") {
+      await audioContextRef.current.resume();
+    }
+
+    audio.playbackRate = 0.9;
     playing ? audio.pause() : audio.play();
     setPlaying(!playing);
   };
@@ -152,7 +186,7 @@ export default function ListenGurbani() {
 
   const nextAng = () => { showAng(Math.min(ang + 1, 1430)); };
   const prevAng = () => { showAng(Math.max(ang - 1, 1)); };
-  const add10Angs = () => { showAng(Math.min(ang + 10, 1430));};
+  const add10Angs = () => { showAng(Math.min(ang + 10, 1430)); };
   const subtract10Angs = () => { showAng(Math.max(ang - 10, 1)); };
 
   const pankti = panktis[currentIndex];
@@ -164,13 +198,12 @@ export default function ListenGurbani() {
       <div className="min-h-screen flex flex-col justify-center px-6 pb-32 relative bg-black">
         {/* SETTINGS BUTTON */}
         <div
-          className={`fixed top-6 right-6 z-50 transition-all duration-300 ${
-            uiVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
+          className={`fixed top-6 right-6 z-50 transition-all duration-300 ${uiVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
         >
           <button
             onClick={() => setShowSettings(s => !s)}
-            style={{background: '#E5E7EB', color: '#000000'}}
+            style={{ background: '#E5E7EB', color: '#000000' }}
             onMouseEnter={(e: any) => {
               e.target.style.color = '#6B7280';  // hover:text-gray-500 on hover
             }}
@@ -243,9 +276,8 @@ export default function ListenGurbani() {
 
         {/* BOTTOM BAR */}
         <div
-          className={`fixed bottom-0 left-0 w-full bg-gray-900 bg-opacity-95 px-4 sm:px-6 py-3 sm:py-4 transition-all duration-300 ${
-            uiVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
+          className={`fixed bottom-0 left-0 w-full bg-gray-900 bg-opacity-95 px-4 sm:px-6 py-3 sm:py-4 transition-all duration-300 ${uiVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
         >
           {/* Progress Bar */}
           <div className="w-full h-2 bg-gray-700 rounded-full mb-2 lg:mt-8">
@@ -284,8 +316,8 @@ export default function ListenGurbani() {
                           flex items-center gap-2"
                 onClick={togglePlay}
               >
-                {!playing && <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" /> }
-                {playing && <Pause className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" /> }
+                {!playing && <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" />}
+                {playing && <Pause className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8" />}
                 {playing ? "Pause" : "Play"}
               </button>
             </div>
