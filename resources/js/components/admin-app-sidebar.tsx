@@ -3,11 +3,11 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { navigator } from '@/routes/gurbani';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, LayoutGrid } from 'lucide-react';
+import { Ban, BookOpen, Folder, LayoutGrid, Users } from 'lucide-react';
 import AppLogo from './app-logo';
+import { blockIps, visitors } from '@/routes/admin';
 
 const mainNavItems: NavItem[] = [
     {
@@ -16,17 +16,22 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Gurbani Navigator',
-        href: navigator(),
-        icon: BookOpen,
+        title: 'Visitors',
+        href: visitors(),
+        icon: Users,
     },
+    {
+        title: 'Block Ips',
+        href: blockIps(),
+        icon: Ban
+    }
 ];
 
 const footerNavItems: NavItem[] = [
     
 ];
 
-export function AppSidebar() {
+export function AdminAppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

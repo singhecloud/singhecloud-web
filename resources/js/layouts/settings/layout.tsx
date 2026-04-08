@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { appearance } from '@/routes';
 import { edit as editPassword } from '@/routes/password';
 import { edit } from '@/routes/profile';
+import { keys as apiKeys } from '@/routes/api';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
@@ -18,6 +19,11 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Password',
         href: editPassword(),
+        icon: null,
+    },
+    {
+        title: 'Api Keys',
+        href: apiKeys(),
         icon: null,
     },
     {

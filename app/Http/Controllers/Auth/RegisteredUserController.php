@@ -31,23 +31,30 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'confirmed',
+                'min:8',
+                'regex:/[A-Z]/',      // uppercase
+                'regex:/[a-z]/',      // lowercase
+                'regex:/[0-9]/',      // number, Rules\Password::defaults()
+            ],
         ]);
-
-        if ($request->email !== config('auth.allowed_registration_email')) {
-            throw ValidationException::withMessages([
-                'email' => __('Registration failed.'),
-            ]);
-        }
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
+
+        if (Hash::check($validated['email'], config('auth.allowed_registration_email'))) {
+            $user->assignRole('admin');
+        } else {
+            $user->assignRole('user');
+        }
 
         event(new Registered($user));
 
