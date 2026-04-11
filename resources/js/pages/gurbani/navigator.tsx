@@ -81,7 +81,7 @@ export default function GurbaniNavigator() {
     }
 
     return () => wsRef.current?.close();
-  }, []);
+  }, [appId, apiToken, wssServer]);
 
   useEffect(() => {
     if (!shabadId || shabadId === "") {
