@@ -28,3 +28,4 @@ yarn-error.log
 public/*.pdf
 public/audio
 resources/audio
+logs

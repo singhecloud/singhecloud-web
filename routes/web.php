@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\BlockedIpController;
 use App\Http\Controllers\Api\Admin\VisitorController;
 use App\Http\Controllers\Api\DashboardVisitorController;
+use App\Http\Controllers\Api\GurbaniApiController;
 use App\Http\Controllers\Api\SpeechTokenController;
 use App\Http\Controllers\GurbaniNavigatorController;
 use App\Http\Controllers\Learn\Punjabi\HomeController;
@@ -23,6 +24,7 @@ Route::middleware(['auth', 'role:user', 'verified'])->group(function() {
     Route::get('gurbani-navigator', [GurbaniNavigatorController::class, 'index'])->name('gurbani.navigator');
 
     Route::get('/speech/tokens', [SpeechTokenController::class, 'index'])->name('speech.tokens.list');
+    Route::get('/shabads/{shabadId}', [GurbaniApiController::class, 'showShabad']);
 });
 
 Route::middleware(['auth', 'role:admin', 'verified'])->group(function() {

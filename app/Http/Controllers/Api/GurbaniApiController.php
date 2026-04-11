@@ -37,4 +37,26 @@ class GurbaniApiController
             'panktis' => $panktis,
         ];
     }
+
+    public function showShabad($shabadId)
+    {
+        $panktis = DB::select(
+            "SELECT
+                l.id,
+                l.gurmukhi,
+                t.translation
+                source_page
+            From lines l
+            LEFT JOIN translations t
+                ON t.line_id = l.id
+               AND t.translation_source_id = 6
+            WHERE l.shabad_id = ?
+            ORDER BY l.order_id ASC",
+            [$shabadId]
+        );
+
+        return response()->json([
+            'panktis' => $panktis,
+        ]);
+    }
 }
