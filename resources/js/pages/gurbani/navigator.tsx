@@ -1,14 +1,10 @@
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import "../../../css/font.css";
-
-const apiToken = import.meta.env.VITE_API_TOKEN;
-const appId = import.meta.env.VITE_APP_ID;
-const wssServer = import.meta.env.VITE_WSS_SERVER;
 
 interface SpeechToken {
   final_token: string | null;
@@ -60,6 +56,7 @@ export default function GurbaniNavigator() {
   const [lineId, setLineId] = useState<string>("");
   const [panktis, setPanktis] = useState<Pankti[]>([]);
   const [isMinimized, setIsMinimized] = useState(false);
+  const { apiToken, appId, wssServer } = usePage().props;
 
   useEffect(() => {
     if (!wsRef.current) {
