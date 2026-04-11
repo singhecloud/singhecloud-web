@@ -7,17 +7,17 @@ import { useEffect, useRef, useState } from 'react';
 import "../../../css/font.css";
 
 interface SpeechToken {
-  final_token: string | null;
-  partial_token: string | null;
+  final_token: string;
+  partial_token: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Gurbani Navigator', href: dashboard().url },
 ];
 
-function getLatestFinal(final: string, maxLength = 200) {
+function getLatestFinal(final: string, maxLength = 100) {
   if (final.length <= maxLength) return final;
-  return "..." + final.slice(-maxLength);
+  return final.slice(-maxLength);
 }
 
 const renderGurbani = (gurmukhi: string) => {
@@ -120,9 +120,7 @@ export default function GurbaniNavigator() {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-300 px-4 py-2">
           <span className="text-sm font-semibold tracking-wide">
-            {token.partial_token ? 
-              getLatestFinal(token.final_token + token.partial_token) : ''
-            }
+            {getLatestFinal(token.final_token + token.partial_token)}
           </span>
 
           <button
