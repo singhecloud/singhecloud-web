@@ -92,6 +92,9 @@ export default function GurbaniNavigator() {
               : [...visited, data.c]
           );
           setShabadState({current: data.c ?? 0, home: data.h ?? 0, shabadId: data.s ?? ""});
+          if (page !== "shabad") {
+            setPage("shabad");
+          }
         } else if (data.type === "search-p") {
           setLineIds(data.p);
         } else if (data.type === "page") {
@@ -104,13 +107,14 @@ export default function GurbaniNavigator() {
     }
 
     return () => wsRef.current?.close();
-  }, [appId, apiToken, wssServer]);
+  }, [appId, apiToken, wssServer, page]);
 
   useEffect(() => {
     if (shabadState.shabadId === "") {
       return;
     }
 
+    setVisited([]);
     axios.get(`/shabads/${shabadState.shabadId}`)
       .then(res => {
         setPanktis(res.data.panktis)
@@ -186,6 +190,9 @@ export default function GurbaniNavigator() {
 
     if (navPage !== page) {
       setPage(navPage);
+      if (page === 'search') {
+        setSearch("");
+      }
     }
   }, [page]);
 
