@@ -6,6 +6,10 @@
   font-display: swap;
 }
 
+.gurmukhi {
+  font-family: 'GurbaniWebThick', serif;
+}
+
 .shabad-text {
   font-family: 'GurbaniWebThick', serif;
   font-size: 3rem;

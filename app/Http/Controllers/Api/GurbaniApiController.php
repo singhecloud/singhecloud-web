@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class GurbaniApiController
@@ -58,5 +59,31 @@ class GurbaniApiController
         return response()->json([
             'panktis' => $panktis,
         ]);
+    }
+
+    public function getPanktis(Request $request)
+    {
+        $validated = $request->validate([
+            'lines' => 'required|array',
+            'lines.*' => 'string'
+        ]);
+
+        if (empty($validated['lines'])) {
+            return response()->json([
+                'panktis' => [],
+            ]);
+        }
+
+        $panktis = DB::table('lines as l')
+            ->leftJoin('translations as t', function ($join) {
+                $join->on('t.line_id', '=', 'l.id')
+                    ->where('t.translation_source_id', 6);
+            })
+            ->whereIn('l.id', $validated['lines'])
+            ->orderBy('l.order_id')
+            ->select('l.id', 'l.gurmukhi', 't.translation', 'l.source_page')
+            ->get();
+
+        return response()->json($panktis);
     }
 }

@@ -206,6 +206,123 @@ wss.on("connection", async (ws, req) => {
                 return;
             }
 
+            if (data.type === "page") {
+                const { p } = data;
+
+                // Validate structure
+                if (
+                    !p
+                ) {
+                    logger.warn(`Invalid page message from ${ws.user.name}`);
+                    return;
+                }
+
+                wss.clients.forEach((client) => {
+                    if (
+                        client.readyState === 1 &&
+                        client.isAuthenticated &&
+                        client.user?.id === ws.user?.id &&
+                        client.appId !== ws.appId
+                    ) {
+                        client.send(JSON.stringify({
+                            type: "page",
+                            p
+                        }))
+                    }
+                });
+
+                return;
+            }
+
+            if (data.type === "pankti") {
+                const { s, c, h, b } = data;
+
+                // Validate structure
+                if (
+                    !s
+                ) {
+                    return;
+                }
+
+                wss.clients.forEach((client) => {
+                    if (
+                        client.readyState === 1 &&
+                        client.isAuthenticated &&
+                        client.user?.id === ws.user?.id &&
+                        client.appId !== ws.appId
+                    ) {
+                        client.send(JSON.stringify({
+                            type: "pankti",
+                            s: s, // shabadId
+                            c: c ?? 0, // currentIdx
+                            h: h ?? 0, // homeIdx
+                            b: b ?? null // baniId
+                        }))
+                    }
+                });
+
+                return;
+            }
+
+            if (data.type === "search-term") {
+                const { s } = data;
+
+                wss.clients.forEach((client) => {
+                    if (
+                        client.readyState === 1 &&
+                        client.isAuthenticated &&
+                        client.user?.id === ws.user?.id &&
+                        client.appId !== ws.appId
+                    ) {
+                        client.send(JSON.stringify({
+                            type: "search-term",
+                            s: s ?? "",
+                        }))
+                    }
+                });
+
+                return;
+            }
+
+            if (data.type === "search-p") {
+                const { p } = data;
+
+                wss.clients.forEach((client) => {
+                    if (
+                        client.readyState === 1 &&
+                        client.isAuthenticated &&
+                        client.user?.id === ws.user?.id &&
+                        client.appId !== ws.appId
+                    ) {
+                        client.send(JSON.stringify({
+                            type: "search-p",
+                            p: p ?? [],
+                        }))
+                    }
+                });
+            }
+
+            if (data.type === "search-select") {
+                const { id } = data;
+                if (!id) {
+                    return;
+                }
+
+                wss.clients.forEach((client) => {
+                    if (
+                        client.readyState === 1 &&
+                        client.isAuthenticated &&
+                        client.user?.id === ws.user?.id &&
+                        client.appId !== ws.appId
+                    ) {
+                        client.send(JSON.stringify({
+                            type: "search-select",
+                            id: id
+                        }))
+                    }
+                });
+            }
+
             // ------------------------
             // NORMAL MESSAGE
             // ------------------------
@@ -214,7 +331,8 @@ wss.on("connection", async (ws, req) => {
                     if (
                         client.readyState === 1 &&
                         client.isAuthenticated &&
-                        client.user?.id === ws.user?.id
+                        client.user?.id === ws.user?.id &&
+                        client.appId !== ws.appId
                     ) {
                         client.send(JSON.stringify({
                             type: "message",

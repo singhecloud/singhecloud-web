@@ -25,6 +25,7 @@ Route::middleware(['auth', 'role:user', 'verified'])->group(function() {
 
     Route::get('/speech/tokens', [SpeechTokenController::class, 'index'])->name('speech.tokens.list');
     Route::get('/shabads/{shabadId}', [GurbaniApiController::class, 'showShabad']);
+    Route::post('/panktis', [GurbaniApiController::class, 'getPanktis']);
 });
 
 Route::middleware(['auth', 'role:admin', 'verified'])->group(function() {
