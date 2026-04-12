@@ -92,9 +92,7 @@ export default function GurbaniNavigator() {
               : [...visited, data.c]
           );
           setShabadState({current: data.c ?? 0, home: data.h ?? 0, shabadId: data.s ?? ""});
-          if (page !== "shabad") {
-            setPage("shabad");
-          }
+          setPage('shabad');
         } else if (data.type === "search-p") {
           setLineIds(data.p);
         } else if (data.type === "page") {
@@ -107,7 +105,7 @@ export default function GurbaniNavigator() {
     }
 
     return () => wsRef.current?.close();
-  }, [appId, apiToken, wssServer, page]);
+  }, [appId, apiToken, wssServer]);
 
   useEffect(() => {
     if (shabadState.shabadId === "") {
