@@ -5,7 +5,7 @@ import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import "../../../css/font.css";
-import { BookOpen, Check, Home, Search } from 'lucide-react';
+import { BookOpen, Check, Home, Mic, MicOff, Search } from 'lucide-react';
 
 interface SpeechToken {
   final_token: string;
@@ -75,13 +75,92 @@ export default function GurbaniNavigator() {
   const [searchPanktis, setSearchPanktis] = useState([]);
   const [lineIds, setLineIds] = useState([]);
   const [visited, setVisited] = useState<number[]>([]);
+  const audioQueueRef = useRef<Uint8Array[]>([]);
+  const processingRef = useRef(false);
+
+  // =========================
+  // AUDIO (RAW PCM 8kHz i16)
+  // =========================
+
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const nextPlayTimeRef = useRef(0);
+  const queueRef = useRef<Float32Array[]>([]);
+
+  // Init AudioContext (must match backend sample rate)
+  useEffect(() => {
+    const ctx = new AudioContext({ sampleRate: 8000 });
+    audioCtxRef.current = ctx;
+
+    return () => {
+      ctx.close();
+    };
+  }, []);
+
+  // Decode i16 PCM → Float32
+  function decodePCM16(buffer: ArrayBuffer) {
+    const view = new DataView(buffer);
+    const samples = new Float32Array(buffer.byteLength / 2);
+
+    for (let i = 0; i < samples.length; i++) {
+      samples[i] = view.getInt16(i * 2, true) / 32768;
+    }
+
+    return samples;
+  }
+
+  const processAudioQueue = async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    try {
+      const audioCtx = audioCtxRef.current!;
+      const queue = audioQueueRef.current;
+
+      while (queue.length > 0) {
+
+        const chunk: any = queue.shift()!;
+        const samples = decodePCM16(chunk.buffer);
+
+        const buffer = audioCtx.createBuffer(1, samples.length, 8000);
+        buffer.copyToChannel(samples, 0);
+
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (nextPlayTimeRef.current < now) {
+          nextPlayTimeRef.current = now + 0.05;
+        }
+
+        source.start(nextPlayTimeRef.current);
+        nextPlayTimeRef.current += buffer.duration;
+      }
+
+    } finally {
+      processingRef.current = false;
+    }
+  };
 
   useEffect(() => {
     if (!wsRef.current) {
       const socket = new WebSocket(`${wssServer}?token=${apiToken}&appid=${appId}`);
       
       socket.onopen = () => console.log("Connected to WSS server");
-      socket.onmessage = (event) => {
+      socket.onmessage = async (event) => {
+        // ------------------------
+        // HANDLE BINARY (AUDIO)
+        // ------------------------
+        if (event.data instanceof Blob) {
+          event.data.arrayBuffer().then((buf) => {
+            audioQueueRef.current.push(new Uint8Array(buf));
+            processAudioQueue(); // trigger async processor
+          });
+
+          return;
+        }
+
         const data = JSON.parse(event.data);
         if (data.type === "token") {
           setToken(token => {return {final_token: token.final_token + data.t, partial_token: data.pt}});
@@ -104,7 +183,10 @@ export default function GurbaniNavigator() {
       wsRef.current = socket;
     }
 
-    return () => wsRef.current?.close();
+    return () => {
+      wsRef.current?.close();
+      wsRef.current = null;
+    }
   }, [appId, apiToken, wssServer]);
 
   useEffect(() => {
@@ -231,6 +313,15 @@ export default function GurbaniNavigator() {
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-300 px-4 py-2 flex-none">
+          {audioCtxRef.current?.state !== "running" ? (
+            <button onClick={() => audioCtxRef.current?.resume()}>
+              <MicOff />
+            </button>
+          ) : (
+            <button onClick={() => audioCtxRef.current?.suspend()}>
+              <Mic />
+            </button>
+          )}
           <span className="text-sm font-semibold tracking-wide">
             {getLatestFinal(token.final_token + token.partial_token)}
           </span>

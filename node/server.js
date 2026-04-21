@@ -109,6 +109,20 @@ function heartbeat() {
     this.isAlive = true;
 }
 
+function handleAudio(ws, buffer) {
+    wss.clients.forEach((client) => {
+        if (
+            client !== ws &&
+            client.readyState === 1 &&
+            client.isAuthenticated &&
+            client.user?.id === ws.user?.id &&
+            client.appId !== ws.appId
+        ) {
+            client.send(buffer, { binary: true });
+        }
+    });
+}
+
 wss.on("connection", async (ws, req) => {
     const ip = req.socket.remoteAddress;
     const url = new URL(req.url, `http://${req.headers.host}`);
@@ -154,10 +168,8 @@ wss.on("connection", async (ws, req) => {
     // ------------------------
     // MESSAGE HANDLER
     // ------------------------
-    ws.on("message", (msg) => {
+    ws.on("message", (msg, isBinary) => {
         try {
-            const data = JSON.parse(msg);
-
             // ------------------------
             // SAFETY CHECK
             // ------------------------
@@ -166,6 +178,22 @@ wss.on("connection", async (ws, req) => {
                 ws.close();
                 return;
             }
+
+            // ------------------------
+            // HANDLE BINARY (AUDIO)
+            // ------------------------
+            if (isBinary) {
+                if (!ws.isAuthenticated) {
+                    ws.close();
+                    return;
+                }
+
+                // msg is a Buffer (Opus frame)
+                handleAudio(ws, msg);
+                return;
+            }
+
+            const data = JSON.parse(msg);
 
             // ------------------------
             // TOKEN EVENT (NOT AUTH)
@@ -354,6 +382,18 @@ wss.on("connection", async (ws, req) => {
                 return;
             }
 
+            if (data.type === "audio_start") {
+                ws.meta.audio = {
+                    sampleRate: data.sampleRate,
+                    channels: data.channels
+                };
+                return;
+            }
+
+            if (data.type === "audio_end") {
+                delete ws.meta.audio;
+                return;
+            }
         } catch (err) {
             logger.error(`Message error from ${ws.user?.name}: ${err}`);
         }
