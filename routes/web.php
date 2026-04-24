@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\VisitorController;
 use App\Http\Controllers\Api\DashboardVisitorController;
 use App\Http\Controllers\Api\GurbaniApiController;
 use App\Http\Controllers\Api\SpeechTokenController;
+use App\Http\Controllers\Gurbani\GurbaniController;
 use App\Http\Controllers\GurbaniNavigatorController;
 use App\Http\Controllers\Learn\Punjabi\HomeController;
 use App\Http\Controllers\Learn\Punjabi\ReadPunjabiController;
@@ -15,6 +16,9 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('home');
 })->name('home');
+
+Route::get('/search', [GurbaniController::class, 'search'])->name('search');
+Route::get('/shabad/{id}', [GurbaniController::class, 'shabad'])->name('shabad');
 
 Route::middleware(['auth', 'role:user', 'verified'])->group(function() {
     Route::get('dashboard', function () {

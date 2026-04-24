@@ -30,3 +30,14 @@
   font-family: "OpenAnmolUni-Bold";
   font-weight: 900;
 }
+
+html.hide-scrollbar,
+body.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+html.hide-scrollbar::-webkit-scrollbar,
+body.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}

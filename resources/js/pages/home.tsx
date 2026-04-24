@@ -13,7 +13,7 @@ export default function Welcome() {
                 <header className="mx-auto mb-8 flex w-full max-w-5xl items-center justify-between">
                     <div>
                         <Link
-                            href="/"
+                            href="/search"
                             className="inline-flex items-center gap-2 rounded-full border border-border bg-card-bg px-4 py-2 text-sm font-semibold text-foreground shadow-sm backdrop-blur transition hover:bg-card/90 mr-8"
                         >
                             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">

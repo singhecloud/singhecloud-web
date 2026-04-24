@@ -11,4 +11,9 @@ class GurbaniController extends Controller
     {
         return Inertia::render('gurbani/index');
     }
+
+    public function search()
+    {
+        return Inertia::render('gurbani/search');
+    }
 }

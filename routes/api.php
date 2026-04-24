@@ -8,6 +8,8 @@ use Shetabit\Visitor\Middlewares\LogVisits;
 
 Route::middleware([LogVisits::class])->group(function () {
     Route::get('/gurbani/angs/{ang}', [GurbaniApiController::class, 'getByAng']);
+    Route::get('/gurbani/search', [GurbaniApiController::class, 'search']);
+    Route::get('/gurbani/shabad/{id}', [GurbaniApiController::class, 'shabad']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
