@@ -102,6 +102,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'prabhki';
+  src: url('/fonts/Prabhki.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .gurmukhi {
   font-family: 'GurbaniWebThick', serif;
 }
@@ -156,6 +164,10 @@
 
 .gurmukhi-raaj6 {
   font-family: 'raaj6', sans-serif;
+}
+
+.gurmukhi-prabhki {
+  font-family: 'prabhki', sans-serif;
 }
 
 .shabad-text {

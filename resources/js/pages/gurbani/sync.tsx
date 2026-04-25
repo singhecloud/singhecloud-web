@@ -43,6 +43,7 @@ const GURMUKHI_FONT_OPTIONS: { label: string; className: string }[] = [
     { label: "Raaj 4", className: "gurmukhi-raaj4" },
     { label: "Raaj 5", className: "gurmukhi-raaj5" },
     { label: "Raaj 6", className: "gurmukhi-raaj6" },
+    { label: "prabhki", className: "gurmukhi-prabhki" },
 ];
 
 const BACKGROUND_COLOR_OPTIONS = [
