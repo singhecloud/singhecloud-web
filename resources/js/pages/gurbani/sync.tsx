@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import "../../../css/font.css";
+import "../../../css/sync.css";
 
 interface Pankti {
     id: string;
@@ -208,7 +209,7 @@ export default function Sync() {
     };
 
     return (
-        <div className="relative flex w-screen overflow-hidden">
+        <div className="relative flex w-screen overflow-hidden" style={{background: 'none'}}>
             {/* Settings Panel — only rendered when showSettings prop is true */}
             {showSettings && (
                 <div className="fixed top-0 left-0 z-10 bg-white h-screen rounded-2xl border p-4 shadow-sm overflow-y-auto space-y-5 w-64">
@@ -241,8 +242,8 @@ export default function Sync() {
                             />
                             <input
                                 type="range"
-                                min="20"
-                                max="80"
+                                min="10"
+                                max="150"
                                 value={settings.gurmukhiFontSize}
                                 onChange={(e) => updateSetting("gurmukhiFontSize", Number(e.target.value))}
                                 className="w-full"
@@ -272,8 +273,8 @@ export default function Sync() {
                             </div>
                             <input
                                 type="range"
-                                min="16"
-                                max="60"
+                                min="1"
+                                max="100"
                                 value={settings.punjabiFontSize}
                                 onChange={(e) => updateSetting("punjabiFontSize", Number(e.target.value))}
                                 className="w-full"
@@ -303,8 +304,8 @@ export default function Sync() {
                             </div>
                             <input
                                 type="range"
-                                min="16"
-                                max="60"
+                                min="1"
+                                max="100"
                                 value={settings.englishFontSize}
                                 onChange={(e) => updateSetting("englishFontSize", Number(e.target.value))}
                                 className="w-full"
@@ -319,7 +320,7 @@ export default function Sync() {
                             <input
                                 type="range"
                                 min="-20"
-                                max="80"
+                                max="100"
                                 value={settings.gapAfterGurmukhi}
                                 onChange={(e) => updateSetting("gapAfterGurmukhi", Number(e.target.value))}
                                 className="w-full"
@@ -331,7 +332,7 @@ export default function Sync() {
                             <input
                                 type="range"
                                 min="-20"
-                                max="80"
+                                max="100"
                                 value={settings.gapAfterPunjabi}
                                 onChange={(e) => updateSetting("gapAfterPunjabi", Number(e.target.value))}
                                 className="w-full"
@@ -346,7 +347,7 @@ export default function Sync() {
                             <input
                                 type="range"
                                 min="0"
-                                max="40"
+                                max="100"
                                 value={settings.xPadding}
                                 onChange={(e) => updateSetting("xPadding", Number(e.target.value))}
                                 className="w-full"
@@ -358,7 +359,7 @@ export default function Sync() {
                             <input
                                 type="range"
                                 min="0"
-                                max="40"
+                                max="100"
                                 value={settings.yPadding}
                                 onChange={(e) => updateSetting("yPadding", Number(e.target.value))}
                                 className="w-full"
@@ -383,6 +384,7 @@ export default function Sync() {
                                     }}
                                 />
                             ))}
+                            <div style={{ position: "relative", zIndex: 9999 }}>
                             <input
                                 type="color"
                                 value={settings.backgroundColor}
@@ -390,6 +392,7 @@ export default function Sync() {
                                 className="h-6 w-6 cursor-pointer rounded border"
                                 title="Custom color"
                             />
+                            </div>
                         </div>
                     </div>
 
