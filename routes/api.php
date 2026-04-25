@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BaniStreamController;
 use App\Http\Controllers\Api\GurbaniApiController;
 use App\Http\Controllers\Api\SpeechTokenController;
 use Illuminate\Http\Request;
@@ -10,6 +11,7 @@ Route::middleware([LogVisits::class])->group(function () {
     Route::get('/gurbani/angs/{ang}', [GurbaniApiController::class, 'getByAng']);
     Route::get('/gurbani/search', [GurbaniApiController::class, 'search']);
     Route::get('/gurbani/shabad/{id}', [GurbaniApiController::class, 'shabad']);
+    Route::get('/bani-stream/{name}', [BaniStreamController::class, 'validateName']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -19,6 +21,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
+            'bani-stream-name' => $user->baniStreamKey?->name,
         ]);
     });
 

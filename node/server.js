@@ -96,11 +96,19 @@ async function validateToken(token) {
     }
 }
 
+const userSettings = new Map();
+const userPankti = new Map();
+
 // ------------------------
 // WebSocket server
 // ------------------------
 const wss = new WebSocketServer({
   port: 3001,
+  host: "127.0.0.1"
+});
+
+const wssPublic = new WebSocketServer({
+  port: 3002,
   host: "127.0.0.1"
 });
 
@@ -122,6 +130,154 @@ function handleAudio(ws, buffer) {
         }
     });
 }
+
+async function validateStream(streamName) {
+    if (!streamName) return null;
+
+    try {
+        const res = await fetch(`${appUrl}/api/bani-stream/${encodeURIComponent(streamName)}`);
+        if (res.status !== 200) return null;
+        return await res.json();
+    } catch (err) {
+        logger.error(`Stream validation error: ${err}`);
+        return null;
+    }
+}
+
+function broadcastPankti(sender, payload) {
+    userPankti.set(sender.user.id, payload);
+
+    const message = JSON.stringify({
+        type: "pankti",
+        s: payload.s,
+        c: payload.c ?? 0,
+        h: payload.h ?? 0,
+        b: payload.b ?? null,
+    });
+
+    // Private authenticated clients
+    wss.clients.forEach((client) => {
+        if (
+            client !== sender &&
+            client.readyState === 1 &&
+            client.isAuthenticated &&
+            client.user?.id === sender.user?.id &&
+            client.appId !== sender.appId
+        ) {
+            client.send(message);
+        }
+    });
+
+    // Public read-only stream listeners
+    wssPublic.clients.forEach((client) => {
+        if (
+            client.readyState === 1 &&
+            client.isAuthenticated &&
+            client.isReadOnly &&
+            client.user?.id === sender.user?.id
+        ) {
+            client.send(message);
+        }
+    });
+}
+
+function broadcastSettings(userId, settings) {
+    const message = JSON.stringify({ type: "settings", settings });
+
+    wssPublic.clients.forEach((client) => {
+        if (
+            client.readyState === 1 &&
+            client.isAuthenticated &&
+            client.isReadOnly &&
+            client.user?.id === userId
+        ) {
+            client.send(message);
+        }
+    });
+}
+
+wssPublic.on("connection", async (ws, req) => {
+    const ip = req.socket.remoteAddress;
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const streamKeyName = url.searchParams.get("stream-key-name");
+
+    // ------------------------
+    // READ-ONLY STREAM CONNECTION
+    // ------------------------
+    if (streamKeyName) {
+        const stream = await validateStream(streamKeyName);
+
+        if (!stream) {
+            logger.warn(`Invalid stream name '${streamKeyName}' from IP ${ip}`);
+            ws.close(1008, "Invalid stream");
+            return;
+        }
+
+        ws.user = { id: stream.user_id, name: `Stream:${stream.name}` };
+        ws.appId = "gurbani-stream";
+        ws.isAuthenticated = true;
+        ws.isReadOnly = true;
+        ws.isAlive = true;
+        ws.meta = { streamId: stream.id };
+
+        ws.on("pong", heartbeat);
+
+        logger.info(`Read-only stream listener connected: ${stream.name} from ${ip}`);
+
+        ws.on("message", (msg) => {
+            try {
+                const data = JSON.parse(msg);
+
+                if (data.type === "settings") {
+                    const { settings } = data;
+                    if (!settings || typeof settings !== "object") {
+                        logger.warn(`Invalid settings message from ${ws.user.name}`);
+                        return;
+                    }
+
+                    // Persist to server-level map
+                    userSettings.set(ws.user.id, settings);
+                    logger.info(`Settings updated for user ${ws.user.name}`);
+
+                    // Broadcast to public stream listeners
+                    broadcastSettings(ws.user.id, settings);
+                    return;
+                }
+
+                if (data.type === "get-settings") {
+                    const storedSettings = userSettings.get(stream.user_id) ?? null;
+                    const storedPankti = userPankti.get(stream.user_id) ?? null;
+
+                    ws.send(JSON.stringify({ type: "settings", settings: storedSettings }));
+                    if (storedPankti) {
+                        ws.send(JSON.stringify({
+                            type: "pankti",
+                            s: storedPankti.s,
+                            c: storedPankti.c ?? 0,
+                            h: storedPankti.h ?? 0,
+                            b: storedPankti.b ?? null,
+                        }));
+                    }
+                    return;
+                }
+
+                logger.warn(`Read-only client sent disallowed message type '${data.type}' for stream ${stream.name}`);
+                ws.close(1008, "Read-only connection");
+            } catch {
+                logger.warn(`Read-only client sent invalid message for stream ${stream.name}`);
+                ws.close(1008, "Read-only connection");
+            }
+        });
+
+        ws.send(JSON.stringify({ type: "ready" }));
+
+        ws.on("close", () => {
+            logger.info(`Read-only stream listener disconnected: ${stream.name}`);
+        });
+
+        return;
+    }
+});
 
 wss.on("connection", async (ws, req) => {
     const ip = req.socket.remoteAddress;
@@ -272,22 +428,7 @@ wss.on("connection", async (ws, req) => {
                     return;
                 }
 
-                wss.clients.forEach((client) => {
-                    if (
-                        client.readyState === 1 &&
-                        client.isAuthenticated &&
-                        client.user?.id === ws.user?.id &&
-                        client.appId !== ws.appId
-                    ) {
-                        client.send(JSON.stringify({
-                            type: "pankti",
-                            s: s, // shabadId
-                            c: c ?? 0, // currentIdx
-                            h: h ?? 0, // homeIdx
-                            b: b ?? null // baniId
-                        }))
-                    }
-                });
+                broadcastPankti(ws, { s, c, h, b });
 
                 return;
             }

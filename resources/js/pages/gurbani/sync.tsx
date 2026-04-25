@@ -1,0 +1,471 @@
+import { usePage } from "@inertiajs/react";
+import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import "../../../css/font.css";
+
+interface Pankti {
+    id: string;
+    gurmukhi: string;
+    punjabi_translation: string;
+    english_translation: string;
+}
+
+interface DisplaySettings {
+    xPadding: number;
+    yPadding: number;
+    gurmukhiFontSize: number;
+    punjabiFontSize: number;
+    englishFontSize: number;
+    showPunjabi: boolean;
+    showEnglish: boolean;
+    gapAfterGurmukhi: number;
+    gapAfterPunjabi: number;
+    backgroundColor: string;
+    backgroundOpacity: number;
+    gurmukhiFontClass: string;
+    gurmukhiColor: string;
+    punjabiColor: string;
+    englishColor: string;
+}
+
+const GURMUKHI_FONT_OPTIONS: { label: string; className: string }[] = [
+    { label: "Gurbani Web Thick", className: "gurmukhi-gurbani-web-thick" },
+    { label: "Open Gurbani Akhar Black", className: "gurmukhi-open-gurbani-akhar-black" },
+    { label: "Open Gurbani Akhar Bold", className: "gurmukhi-open-gurbani-akhar-bold" },
+    { label: "Open Gurbani Akhar Regular", className: "gurmukhi-open-gurbani-akhar-regular" },
+    { label: "Riyasti Naveen", className: "gurmukhi-riyasti-naveen" },
+    { label: "Raaj 1", className: "gurmukhi-raaj1" },
+    { label: "Raaj 2", className: "gurmukhi-raaj2" },
+    { label: "Raaj 3", className: "gurmukhi-raaj3" },
+    { label: "Raaj 4", className: "gurmukhi-raaj4" },
+    { label: "Raaj 5", className: "gurmukhi-raaj5" },
+    { label: "Raaj 6", className: "gurmukhi-raaj6" },
+];
+
+const BACKGROUND_COLOR_OPTIONS = [
+    { label: "Black", value: "#000000" },
+    { label: "White", value: "#ffffff" },
+    { label: "Navy", value: "#0f172a" },
+    { label: "Dark Blue", value: "#1e3a5f" },
+    { label: "Deep Purple", value: "#1e0a3c" },
+    { label: "Forest Green", value: "#14532d" },
+    { label: "Maroon", value: "#4a0000" },
+];
+
+const hexToRgba = (hex: string, opacity: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+};
+
+interface ColorRowProps {
+    label: string;
+    value: string;
+    onChange: (val: string) => void;
+}
+
+function ColorRow({ label, value, onChange }: ColorRowProps) {
+    return (
+        <div className="flex items-center justify-between gap-2">
+            <span className="text-sm">{label}</span>
+            <input
+                type="color"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="h-7 w-10 cursor-pointer rounded border p-0.5"
+                title={`${label} color`}
+            />
+        </div>
+    );
+}
+
+export default function Sync() {
+    const wsRef = useRef<WebSocket | null>(null);
+    const wsConnecting = useRef<boolean>(false);
+    const { wssServer, streamKeyName, showSettings }: any = usePage().props;
+
+    const [panktis, setPanktis] = useState<Pankti[]>([]);
+    const [shabadState, setShabadState] = useState<{
+        panktis: Pankti[];
+        current: number | null;
+        shabadId: string | null;
+    }>({
+        shabadId: null,
+        panktis: [],
+        current: null,
+    });
+
+    const [settings, setSettings] = useState<DisplaySettings>({
+        xPadding: 4,
+        yPadding: 4,
+        gurmukhiFontSize: 30,
+        punjabiFontSize: 24,
+        englishFontSize: 22,
+        showPunjabi: true,
+        showEnglish: true,
+        gapAfterGurmukhi: 16,
+        gapAfterPunjabi: 16,
+        backgroundColor: "#ffffff",
+        backgroundOpacity: 0,
+        gurmukhiFontClass: "gurmukhi-gurbani-web-thick",
+        gurmukhiColor: "#000000",
+        punjabiColor: "#000000",
+        englishColor: "#000000",
+    });
+
+    useEffect(() => {
+        if (wsRef.current || wsConnecting.current) return;
+
+        wsConnecting.current = true;
+        const socket = new WebSocket(
+            `${wssServer}?stream-key-name=${encodeURIComponent(streamKeyName)}`
+        );
+
+        socket.onopen = () => {
+            wsRef.current = socket;
+            console.log("Connected to public stream");
+        };
+
+        socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                switch (data.type) {
+                    case "ready":
+                        socket.send(JSON.stringify({ type: "get-settings" }));
+                    break;
+                    case "pankti":
+                        setShabadState({ panktis: [], current: data?.c, shabadId: data?.s });
+                        break;
+                    case "settings":
+                        if (data.settings) setSettings(data.settings);
+                        break;
+                    case "pong":
+                        console.log("Pong received");
+                        break;
+                }
+            } catch (error) {
+                console.error("Failed to parse WebSocket message:", error);
+            }
+        };
+
+        socket.onerror = (error) => console.error("WebSocket error:", error);
+
+        socket.onclose = (event) => {
+            console.log(`Disconnected (code: ${event.code}, reason: ${event.reason})`);
+            wsRef.current = null;
+            wsConnecting.current = false;
+        };
+
+        wsConnecting.current = false;
+
+        return () => {
+            socket.close();
+            wsRef.current = null;
+            wsConnecting.current = false;
+        };
+    }, [wssServer, streamKeyName]);
+
+    useEffect(() => {
+        if (!shabadState.shabadId) return;
+        axios.get(`/api/gurbani/shabad/${shabadState.shabadId}`).then((res) => {
+            setPanktis(res.data.panktis);
+        });
+    }, [shabadState.shabadId]);
+
+    const currentIndex = shabadState.current;
+    const activePankti = currentIndex !== null ? panktis[currentIndex] : undefined;
+
+    const currentPankti = {
+        gurmukhi:
+            activePankti?.gurmukhi
+                ?.replaceAll(";", "")
+                ?.replaceAll(",", "")
+                ?.replaceAll(".", "") ?? "",
+        punjabi: activePankti?.punjabi_translation ?? "",
+        english: activePankti?.english_translation ?? "",
+    };
+
+    const updateSetting = <K extends keyof DisplaySettings>(
+        key: K,
+        value: DisplaySettings[K]
+    ) => {
+        setSettings((prev) => {
+            const next = { ...prev, [key]: value };
+
+            console.log('saving: ', wsRef.current);
+            if (showSettings && wsRef.current?.readyState === WebSocket.OPEN) {
+                console.log('saving settings');
+                wsRef.current.send(
+                    JSON.stringify({ type: "settings", settings: next })
+                );
+            }
+
+            return next;
+        });
+    };
+
+    return (
+        <div className="relative flex w-screen overflow-hidden">
+            {/* Settings Panel — only rendered when showSettings prop is true */}
+            {showSettings && (
+                <div className="fixed top-0 left-0 z-10 bg-white h-screen rounded-2xl border p-4 shadow-sm overflow-y-auto space-y-5 w-64">
+                    <h3 className="text-lg font-semibold">Display Settings</h3>
+
+                    {/* Gurmukhi Font Type */}
+                    <div className="space-y-1.5">
+                        <span className="text-sm font-medium">Gurmukhi Font</span>
+                        <select
+                            value={settings.gurmukhiFontClass}
+                            onChange={(e) => updateSetting("gurmukhiFontClass", e.target.value)}
+                            className="w-full rounded border px-2 py-1 text-sm"
+                        >
+                            {GURMUKHI_FONT_OPTIONS.map((opt) => (
+                                <option key={opt.className} value={opt.className}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Font Sizes + Colors */}
+                    <div className="space-y-4">
+                        {/* Gurmukhi */}
+                        <div className="space-y-1.5">
+                            <ColorRow
+                                label={`Gurmukhi (${settings.gurmukhiFontSize}px)`}
+                                value={settings.gurmukhiColor}
+                                onChange={(val) => updateSetting("gurmukhiColor", val)}
+                            />
+                            <input
+                                type="range"
+                                min="20"
+                                max="80"
+                                value={settings.gurmukhiFontSize}
+                                onChange={(e) => updateSetting("gurmukhiFontSize", Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </div>
+
+                        {/* Punjabi */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => updateSetting("showPunjabi", !settings.showPunjabi)}
+                                    className="flex items-center gap-1.5 text-sm"
+                                >
+                                    {settings.showPunjabi
+                                        ? <Eye className="h-4 w-4" />
+                                        : <EyeOff className="h-4 w-4" />}
+                                    <span>Punjabi ({settings.punjabiFontSize}px)</span>
+                                </button>
+                                <input
+                                    type="color"
+                                    value={settings.punjabiColor}
+                                    onChange={(e) => updateSetting("punjabiColor", e.target.value)}
+                                    className="h-7 w-10 cursor-pointer rounded border p-0.5"
+                                    title="Punjabi color"
+                                />
+                            </div>
+                            <input
+                                type="range"
+                                min="16"
+                                max="60"
+                                value={settings.punjabiFontSize}
+                                onChange={(e) => updateSetting("punjabiFontSize", Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </div>
+
+                        {/* English */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => updateSetting("showEnglish", !settings.showEnglish)}
+                                    className="flex items-center gap-1.5 text-sm"
+                                >
+                                    {settings.showEnglish
+                                        ? <Eye className="h-4 w-4" />
+                                        : <EyeOff className="h-4 w-4" />}
+                                    <span>English ({settings.englishFontSize}px)</span>
+                                </button>
+                                <input
+                                    type="color"
+                                    value={settings.englishColor}
+                                    onChange={(e) => updateSetting("englishColor", e.target.value)}
+                                    className="h-7 w-10 cursor-pointer rounded border p-0.5"
+                                    title="English color"
+                                />
+                            </div>
+                            <input
+                                type="range"
+                                min="16"
+                                max="60"
+                                value={settings.englishFontSize}
+                                onChange={(e) => updateSetting("englishFontSize", Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Gap Settings */}
+                    <div className="space-y-3">
+                        <label className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">Gap after Gurmukhi ({settings.gapAfterGurmukhi}px)</span>
+                            <input
+                                type="range"
+                                min="-20"
+                                max="80"
+                                value={settings.gapAfterGurmukhi}
+                                onChange={(e) => updateSetting("gapAfterGurmukhi", Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">Gap after Punjabi ({settings.gapAfterPunjabi}px)</span>
+                            <input
+                                type="range"
+                                min="-20"
+                                max="80"
+                                value={settings.gapAfterPunjabi}
+                                onChange={(e) => updateSetting("gapAfterPunjabi", Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </label>
+                    </div>
+
+                    {/* Padding Settings */}
+                    <div className="space-y-3">
+                        <label className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">Padding Horizontal ({settings.xPadding}px)</span>
+                            <input
+                                type="range"
+                                min="0"
+                                max="40"
+                                value={settings.xPadding}
+                                onChange={(e) => updateSetting("xPadding", Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </label>
+
+                        <label className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">Padding Vertical ({settings.yPadding}px)</span>
+                            <input
+                                type="range"
+                                min="0"
+                                max="40"
+                                value={settings.yPadding}
+                                onChange={(e) => updateSetting("yPadding", Number(e.target.value))}
+                                className="w-full"
+                            />
+                        </label>
+                    </div>
+
+                    {/* Background Color */}
+                    <div className="space-y-2">
+                        <span className="text-sm font-medium">Background Color</span>
+                        <div className="flex flex-wrap gap-2">
+                            {BACKGROUND_COLOR_OPTIONS.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    title={opt.label}
+                                    onClick={() => updateSetting("backgroundColor", opt.value)}
+                                    className="h-6 w-6 rounded-full border-2"
+                                    style={{
+                                        backgroundColor: opt.value,
+                                        borderColor: settings.backgroundColor === opt.value ? "#3b82f6" : "#d1d5db",
+                                    }}
+                                />
+                            ))}
+                            <input
+                                type="color"
+                                value={settings.backgroundColor}
+                                onChange={(e) => updateSetting("backgroundColor", e.target.value)}
+                                className="h-6 w-6 cursor-pointer rounded border"
+                                title="Custom color"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Background Opacity */}
+                    <label className="flex flex-col gap-1">
+                        <span className="text-sm font-medium">Background Opacity ({settings.backgroundOpacity}%)</span>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={settings.backgroundOpacity}
+                            onChange={(e) => updateSetting("backgroundOpacity", Number(e.target.value))}
+                            className="w-full"
+                        />
+                    </label>
+                </div>
+            )}
+
+            <div
+                className="flex flex-col items-center justify-center flex-1 overflow-hidden"
+                style={{
+                    backgroundColor: hexToRgba(settings.backgroundColor, settings.backgroundOpacity),
+                    paddingLeft: `${settings.xPadding}px`,
+                    paddingRight: `${settings.xPadding}px`,
+                    paddingTop: `${settings.yPadding}px`,
+                    paddingBottom: `${settings.yPadding}px`,
+                }}
+            >
+                {/* Gurmukhi — can wrap but won't overflow */}
+                <div
+                    className={`${settings.gurmukhiFontClass} text-center w-full`}
+                    style={{
+                        fontSize: `${settings.gurmukhiFontSize}px`,
+                        marginBottom: `${settings.gapAfterGurmukhi}px`,
+                        color: settings.gurmukhiColor,
+                        wordBreak: "break-word",
+                    }}
+                >
+                    {currentPankti.gurmukhi}
+                </div>
+
+                {/* Punjabi — single line with ellipsis */}
+                {settings.showPunjabi && (
+                    <div
+                        className="gurmukhi-open-gurbani-akhar-black w-full"
+                        style={{
+                            fontSize: `${settings.punjabiFontSize}px`,
+                            marginBottom: `${settings.gapAfterPunjabi}px`,
+                            color: settings.punjabiColor,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            textAlign: "center",
+                        }}
+                    >
+                        {currentPankti.punjabi}
+                    </div>
+                )}
+
+                {/* English — single line with ellipsis */}
+                {settings.showEnglish && (
+                    <div
+                        className="w-full"
+                        style={{
+                            fontSize: `${settings.englishFontSize}px`,
+                            color: settings.englishColor,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            textAlign: "center",
+                        }}
+                    >
+                        {currentPankti.english}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

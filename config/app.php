@@ -126,4 +126,5 @@ return [
     'api_token' => env('API_TOKEN'),
     'app_id' => env('APP_ID'),
     'wss_server' => env('WSS_SERVER'),
+    'wss_public_server' => env('WSS_PUBLIC_SERVER'),
 ];

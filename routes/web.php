@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\GurbaniApiController;
 use App\Http\Controllers\Api\SpeechTokenController;
 use App\Http\Controllers\Gurbani\GurbaniController;
 use App\Http\Controllers\GurbaniNavigatorController;
+use App\Http\Controllers\GurbaniSyncController;
 use App\Http\Controllers\Learn\Punjabi\HomeController;
 use App\Http\Controllers\Learn\Punjabi\ReadPunjabiController;
 use App\Http\Controllers\Listen\GurbaniListenController;
@@ -19,6 +20,7 @@ Route::get('/', function () {
 
 Route::get('/search', [GurbaniController::class, 'search'])->name('search');
 Route::get('/shabad/{id}', [GurbaniController::class, 'shabad'])->name('shabad');
+Route::get('/sync/{keyName}', GurbaniSyncController::class);
 
 Route::middleware(['auth', 'role:user', 'verified'])->group(function() {
     Route::get('dashboard', function () {

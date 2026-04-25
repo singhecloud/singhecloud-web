@@ -6,6 +6,7 @@ import { appearance } from '@/routes';
 import { edit as editPassword } from '@/routes/password';
 import { edit } from '@/routes/profile';
 import { keys as apiKeys } from '@/routes/api';
+import { get as baniStreamGet } from '@/routes/api/bani-stream';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
@@ -24,6 +25,11 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Api Keys',
         href: apiKeys(),
+        icon: null,
+    },
+    {
+        title: 'Bani Stream',
+        href: baniStreamGet(),
         icon: null,
     },
     {

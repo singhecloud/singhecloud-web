@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApiKeyController;
+use App\Http\Controllers\BaniStreamController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,9 @@ Route::middleware('auth')->group(function () {
     })->name('appearance');
 
     Route::get('api/keys', [ApiKeyController::class, 'show'])->name('api.keys');
+
+    Route::get('settings/bani-stream', [BaniStreamController::class, 'get'])->name('api.bani-stream.get');
+    Route::post('settings/bani-stream', [BaniStreamController::class, 'store'])->name('api.bani-stream.save');
 
     Route::get('api/generate-key', [ApiKeyController::class, 'generate'])
         ->middleware('throttle:5,1')

@@ -109,16 +109,23 @@ class GurbaniApiController
 
         $panktis = DB::select(
             "SELECT
-                l.id,
-                l.gurmukhi,
-                t.translation
-                source_page
-            From lines l
-            LEFT JOIN translations t
-                ON t.line_id = l.id
-               AND t.translation_source_id = 6
-            WHERE l.shabad_id = ?
-            ORDER BY l.order_id ASC",
+                lines.id,
+                lines.gurmukhi,
+                punjabi.translation as punjabi_translation,
+                english.translation as english_translation
+                From lines
+                INNER JOIN shabads ON (lines.shabad_id = shabads.id)
+                LEFT JOIN translations AS punjabi ON lines.id = punjabi.line_id AND (
+                    (shabads.source_id = 1 AND punjabi.translation_source_id = 6) OR
+                    (shabads.source_id != 1 AND punjabi.translation_source_id IN (8, 11, 13, 15, 17, 19, 21))
+                )
+                LEFT JOIN translations AS english ON lines.id = english.line_id AND (
+                    (shabads.source_id = 1 AND english.translation_source_id = 1) OR
+                    (shabads.source_id != 1 AND english.translation_source_id IN (7, 9, 10, 12, 14, 16, 18, 20, 22))
+                )
+                WHERE lines.shabad_id = ?
+                ORDER BY lines.order_id ASC
+            ",
             [$shabadId]
         );
 

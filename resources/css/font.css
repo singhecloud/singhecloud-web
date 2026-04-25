@@ -6,8 +6,156 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'anmolunibaniheavy';
+  src: url('/fonts/anmolunibaniheavy.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenAnmolUni-Bold';
+  src: url('/fonts/OpenAnmolUni-Bold.otf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenGurbaniAkhar-Black';
+  src: url('/fonts/OpenGurbaniAkhar-Black.otf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenGurbaniAkhar-Bold';
+  src: url('/fonts/OpenGurbaniAkhar-Bold.otf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'OpenGurbaniAkhar-Regular';
+  src: url('/fonts/OpenGurbaniAkhar-Regular.otf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'riyasti-naveen';
+  src: url('/fonts/riyasti-naveen.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'raaj1';
+  src: url('/fonts/raaj1.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'raaj2';
+  src: url('/fonts/raaj2.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'raaj3';
+  src: url('/fonts/raaj3.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'raaj4';
+  src: url('/fonts/raaj4.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'raaj5';
+  src: url('/fonts/raaj5.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'raaj6';
+  src: url('/fonts/raaj6.ttf');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .gurmukhi {
   font-family: 'GurbaniWebThick', serif;
+}
+
+.gurmukhi-gurbani-web-thick {
+  font-family: 'GurbaniWebThick', sans-serif;
+}
+
+.gurmukhi-anmol-uni-bani-heavy {
+  font-family: 'anmolunibaniheavy', sans-serif;
+}
+
+.gurmukhi-open-anmol-uni-bold {
+  font-family: 'OpenAnmolUni-Bold', sans-serif;
+}
+
+.gurmukhi-open-gurbani-akhar-black {
+  font-family: 'OpenGurbaniAkhar-Black', sans-serif;
+}
+
+.gurmukhi-open-gurbani-akhar-bold {
+  font-family: 'OpenGurbaniAkhar-Bold', sans-serif;
+}
+
+.gurmukhi-open-gurbani-akhar-regular {
+  font-family: 'OpenGurbaniAkhar-Regular', sans-serif;
+}
+
+.gurmukhi-riyasti-naveen {
+  font-family: 'riyasti-naveen', sans-serif;
+}
+
+.gurmukhi-raaj1 {
+  font-family: 'raaj1', sans-serif;
+}
+
+.gurmukhi-raaj2 {
+  font-family: 'raaj2', sans-serif;
+}
+
+.gurmukhi-raaj3 {
+  font-family: 'raaj3', sans-serif;
+}
+
+.gurmukhi-raaj4 {
+  font-family: 'raaj4', sans-serif;
+}
+
+.gurmukhi-raaj5 {
+  font-family: 'raaj5', sans-serif;
+}
+
+.gurmukhi-raaj6 {
+  font-family: 'raaj6', sans-serif;
 }
 
 .shabad-text {
