@@ -24,8 +24,15 @@ export function Akhar({
   const [showHome, setShowHome] = useState(true);
   const homeButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  const isTV =
+    /TV|SMART-TV|Tizen|Web0S|WebOS|AFT|BRAVIA/i.test(navigator.userAgent) ||
+    (matchMedia("(pointer: coarse)").matches &&
+    matchMedia("(hover: none)").matches);
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
+    let lastX: number | null = null;
+    let lastMoveTime = 0;
 
     const showControls = () => {
       setShowHome(true);
@@ -39,29 +46,80 @@ export function Akhar({
       }, 2000);
     };
 
+    const focusHome = () => {
+      setShowHome(true);
+      document.body.style.cursor = "default";
+
+      requestAnimationFrame(() => {
+        homeButtonRef.current?.focus();
+      });
+
+      if (timer) clearTimeout(timer);
+
+      timer = setTimeout(() => {
+        setShowHome(false);
+        document.body.style.cursor = "none";
+      }, 2000);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      showControls();
+
+      if (!isTV) return;
+      const now = Date.now();
+
+      if (lastX === null) {
+        lastX = e.clientX;
+        return;
+      }
+
+      if (now - lastMoveTime < 300) return;
+
+      const diffX = e.clientX - lastX;
+
+      // ignore tiny cursor movement
+      if (Math.abs(diffX) < 80) return;
+
+      // left or right movement focuses Home
+      focusHome();
+
+      lastX = e.clientX;
+      lastMoveTime = now;
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       showControls();
 
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        setShowHome(true);
-        homeButtonRef.current?.focus();
+      if (
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight" ||
+        e.keyCode === 37 ||
+        e.keyCode === 39
+      ) {
+        focusHome();
+      }
+
+      if (e.key === "Enter" || e.keyCode === 13) {
+        if (document.activeElement === homeButtonRef.current) {
+          homeButtonRef.current?.click();
+        }
       }
     };
 
-    window.addEventListener("mousemove", showControls);
+    window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("touchstart", showControls);
     window.addEventListener("keydown", handleKeyDown);
 
     showControls();
 
     return () => {
-      window.removeEventListener("mousemove", showControls);
+      window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchstart", showControls);
       window.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timer);
       document.body.style.cursor = "default";
     };
-  }, []);
+  }, [isTV]);
 
   useEffect(() => {
     if (!soundSrc) return;
