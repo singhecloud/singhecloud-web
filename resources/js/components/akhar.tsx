@@ -28,6 +28,11 @@ export function Akhar({ imgSrc, alt = "", soundSrc, backHref, nextHref }: ReadTi
     audio.addEventListener("ended", handleEnd);
     audio.addEventListener("pause", handlePause);
 
+    audio.currentTime = 0;
+    audio.play().catch((err) => {
+      console.log("Autoplay blocked:", err);
+    });
+
     return () => {
       audio.removeEventListener("playing", handlePlay);
       audio.removeEventListener("ended", handleEnd);
