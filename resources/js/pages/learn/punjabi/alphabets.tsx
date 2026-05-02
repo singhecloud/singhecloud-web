@@ -1,7 +1,7 @@
 import { Akhar } from "@/components/akhar";
 
 // Import all images and sounds dynamically
-const images = import.meta.glob("../../../../images/alphabets/*.png", { eager: true });
+const images = import.meta.glob("../../../../images/alphabets/*.webp", { eager: true });
 const sounds = import.meta.glob("../../../../sounds/*.mp3", { eager: true });
 
 // Helper: normalize keys into numbers
