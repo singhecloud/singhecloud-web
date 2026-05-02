@@ -12,10 +12,8 @@ class ReadPunjabiController extends Controller
         return Inertia::render('learn/punjabi/reading');
     }
 
-    public function alphabets($index)
+    public function alphabets()
     {
-        return Inertia::render('learn/punjabi/alphabets', [
-            'serial' => (int) $index
-        ]);
+        return Inertia::render('learn/punjabi/alphabets');
     }
 }

@@ -1,104 +1,137 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Volume2, ArrowRight, ArrowLeft } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Home } from "lucide-react";
+import { router } from "@inertiajs/react";
 
 type ReadTileProps = {
   imgSrc: string;
   alt?: string;
-  soundSrc?: string; // optional sound
-  nextHref?: string; // link to next alphabet
-  backHref: string|null;
+  soundSrc?: string;
+  onNext: () => void;
+  currentSerial: number;
+  onComplete: () => void;
 };
 
-export function Akhar({ imgSrc, alt = "", soundSrc, backHref, nextHref }: ReadTileProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+export function Akhar({
+  imgSrc,
+  alt = "",
+  soundSrc,
+  onNext,
+  currentSerial,
+  onComplete,
+}: ReadTileProps) {
+  const [showHome, setShowHome] = useState(true);
+  const homeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    if (!audio) return;
+    let timer: ReturnType<typeof setTimeout>;
 
-    const handlePlay = () => setIsPlaying(true);
-    const handleEnd = () => setIsPlaying(false);
-    const handlePause = () => setIsPlaying(false);
+    const showControls = () => {
+      setShowHome(true);
+      document.body.style.cursor = "default";
 
-    audio.addEventListener("playing", handlePlay);
-    audio.addEventListener("ended", handleEnd);
-    audio.addEventListener("pause", handlePause);
+      if (timer) clearTimeout(timer);
 
-    audio.currentTime = 0;
-    audio.play().catch((err) => {
-      console.log("Autoplay blocked:", err);
-    });
+      timer = setTimeout(() => {
+        setShowHome(false);
+        document.body.style.cursor = "none";
+      }, 2000);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      showControls();
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        setShowHome(true);
+        homeButtonRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("mousemove", showControls);
+    window.addEventListener("touchstart", showControls);
+    window.addEventListener("keydown", handleKeyDown);
+
+    showControls();
 
     return () => {
-      audio.removeEventListener("playing", handlePlay);
-      audio.removeEventListener("ended", handleEnd);
-      audio.removeEventListener("pause", handlePause);
+      window.removeEventListener("mousemove", showControls);
+      window.removeEventListener("touchstart", showControls);
+      window.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(timer);
+      document.body.style.cursor = "default";
     };
-  }, [audio]);
+  }, []);
 
   useEffect(() => {
     if (!soundSrc) return;
 
     const newAudio = new Audio(soundSrc);
     newAudio.preload = "auto";
-    setAudio(newAudio);
+
+    let nextTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleEnd = () => {
+      nextTimer = setTimeout(() => {
+        if (currentSerial >= 37) {
+          onComplete();
+        } else {
+          onNext();
+        }
+      }, 1000);
+    };
+
+    newAudio.addEventListener("ended", handleEnd);
+
+    newAudio.currentTime = 0;
+    newAudio.play().catch((err) => {
+      console.log("Autoplay blocked:", err);
+    });
 
     return () => {
       newAudio.pause();
-    };
-  }, [soundSrc]);
+      newAudio.currentTime = 0;
 
-  const playSound = () => {
-    if (audio && !isPlaying) {
-      audio.currentTime = 0;
-      audio.play();
-    }
-  };
+      if (nextTimer) clearTimeout(nextTimer);
+
+      newAudio.removeEventListener("ended", handleEnd);
+    };
+  }, [soundSrc, currentSerial, onNext, onComplete]);
 
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center bg-orange-100 p-4">
-      {/* Container keeps image + buttons same width */}
+      <button
+        ref={homeButtonRef}
+        onClick={() => router.visit("/learn/punjabi/reading")}
+        aria-label="Go home"
+        className={`
+          fixed top-6 left-6 z-50
+          bg-white/90 text-green-700
+          border border-green-200
+          p-4 rounded-full shadow-md
+          hover:bg-green-50
+          focus:outline-none focus:ring-4 focus:ring-green-500
+          flex items-center justify-center
+          transition-all duration-300
+          ${
+            showHome
+              ? "opacity-100 scale-100"
+              : "opacity-0 scale-90 pointer-events-none"
+          }
+        `}
+      >
+        <Home size={26} />
+      </button>
+
       <div className="w-full max-w-3xl flex flex-col items-center">
-        {/* Alphabet Image */}
-        <img
-          src={imgSrc}
-          alt={alt}
-          className="w-full border-4 border-yellow-600 rounded-2xl shadow-lg shadow-yellow-500/50"
-        />
-
-        {/* Bottom row for buttons */}
-        <div className="w-full flex justify-between mt-12">
-          {backHref ? (
-            <a
-              href={backHref}
-              className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg hover:bg-green-700 transition flex items-center gap-2"
-            >
-              <ArrowLeft size={24} />
-            </a>
-          ) : (
-            <div /> // empty spacer for alignment
-          )}
-
-          <button
-            onClick={playSound}
-            disabled={isPlaying}
-            className={`px-6 py-4 rounded-xl shadow-lg flex items-center gap-2 transition
-              ${isPlaying ? "bg-gray-400 cursor-not-allowed" : "bg-yellow-600 hover:bg-yellow-700 text-white"}`}
-          >
-            <Volume2 size={24} />
-            {isPlaying ? "Playing..." : "Play"}
-          </button>
-
-          {nextHref && (
-            <a
-              href={nextHref}
-              className="bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg hover:bg-green-700 transition flex items-center gap-2"
-            >
-              <ArrowRight size={30} />
-            </a>
-          )}
+        <div className="w-full aspect-[3/2] bg-white border-4 border-yellow-600 rounded-2xl shadow-lg shadow-yellow-500/50 overflow-hidden flex items-center justify-center">
+          <img
+            key={imgSrc}
+            src={imgSrc}
+            alt={alt}
+            className="w-full object-contain"
+            style={{ height: "fit-content" }}
+          />
         </div>
       </div>
     </div>
