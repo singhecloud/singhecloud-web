@@ -8,14 +8,12 @@ type ReadTileProps = {
   alt?: string;
   soundSrc?: string; // optional sound
   nextHref?: string; // link to next alphabet
-  backHref?: string;
+  backHref: string|null;
 };
 
 export function Akhar({ imgSrc, alt = "", soundSrc, backHref, nextHref }: ReadTileProps) {
-  const [audio] = useState<HTMLAudioElement | null>(
-    soundSrc ? new Audio(soundSrc) : null
-  );
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!audio) return;
@@ -39,6 +37,18 @@ export function Akhar({ imgSrc, alt = "", soundSrc, backHref, nextHref }: ReadTi
       audio.removeEventListener("pause", handlePause);
     };
   }, [audio]);
+
+  useEffect(() => {
+    if (!soundSrc) return;
+
+    const newAudio = new Audio(soundSrc);
+    newAudio.preload = "auto";
+    setAudio(newAudio);
+
+    return () => {
+      newAudio.pause();
+    };
+  }, [soundSrc]);
 
   const playSound = () => {
     if (audio && !isPlaying) {
