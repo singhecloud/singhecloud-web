@@ -360,6 +360,7 @@ export default function Sync() {
     const wsConnecting = useRef<boolean>(false);
     const { wssServer, streamKeyName, showSettings }: any = usePage().props;
     const panktiRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const lastContentKeyRef = useRef<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [visitedPanktis, setVisitedPanktis] = useState<Set<number>>(new Set());
 
@@ -397,58 +398,99 @@ export default function Sync() {
     });
 
     useEffect(() => {
-        if (wsRef.current || wsConnecting.current) return;
+        let socket: WebSocket | null = null;
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+        let manuallyClosed = false;
 
-        wsConnecting.current = true;
-        const socket = new WebSocket(
-            `${wssServer}?stream-key-name=${encodeURIComponent(streamKeyName)}`
-        );
+        const connect = () => {
+            if (manuallyClosed) return;
 
-        socket.onopen = () => {
-            wsRef.current = socket;
-            console.log("Connected to public stream");
-        };
-
-        socket.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                switch (data.type) {
-                    case "ready":
-                        socket.send(JSON.stringify({ type: "get-settings" }));
-                        break;
-
-                    case "pankti":
-                        setShabadState({
-                            panktis: [],
-                            current: data?.c,
-                            shabadId: data?.s,
-                            banidId: data?.b,
-                        });
-                        break;
-                    case "settings":
-                        if (data.settings) setSettings(data.settings);
-                        break;
-                    case "pong":
-                        console.log("Pong received");
-                        break;
-                }
-            } catch (error) {
-                console.error("Failed to parse WebSocket message:", error);
+            if (
+                wsConnecting.current ||
+                wsRef.current?.readyState === WebSocket.OPEN ||
+                wsRef.current?.readyState === WebSocket.CONNECTING
+            ) {
+                return;
             }
+
+            wsConnecting.current = true;
+
+            socket = new WebSocket(
+                `${wssServer}?stream-key-name=${encodeURIComponent(streamKeyName)}`
+            );
+
+            socket.onopen = () => {
+                wsRef.current = socket;
+                wsConnecting.current = false;
+                console.log("Connected to public stream");
+                socket?.send(JSON.stringify({ type: "get-settings" }));
+            };
+
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    switch (data.type) {
+                        case "ready":
+                            socket?.send(JSON.stringify({ type: "get-settings" }));
+                            break;
+
+                        case "pankti":
+                            setShabadState({
+                                panktis: [],
+                                current: data?.c,
+                                shabadId: data?.s,
+                                banidId: data?.b,
+                            });
+
+                            if (Array.isArray(data.visited)) {
+                                setVisitedPanktis(new Set(data.visited));
+                            }
+                            break;
+
+                        case "settings":
+                            if (data.settings) setSettings(data.settings);
+                            break;
+
+                        case "pong":
+                            console.log("Pong received");
+                            break;
+                    }
+                } catch (error) {
+                    console.error("Failed to parse WebSocket message:", error);
+                }
+            };
+
+            socket.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
+
+            socket.onclose = (event) => {
+                console.log(
+                    `Disconnected (code: ${event.code}, reason: ${event.reason})`
+                );
+
+                wsRef.current = null;
+                wsConnecting.current = false;
+
+                if (!manuallyClosed) {
+                    reconnectTimer = setTimeout(() => {
+                        connect();
+                    }, 2000);
+                }
+            };
         };
 
-        socket.onerror = (error) => console.error("WebSocket error:", error);
-
-        socket.onclose = (event) => {
-            console.log(`Disconnected (code: ${event.code}, reason: ${event.reason})`);
-            wsRef.current = null;
-            wsConnecting.current = false;
-        };
-
-        wsConnecting.current = false;
+        connect();
 
         return () => {
-            socket.close();
+            manuallyClosed = true;
+
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+            }
+
+            socket?.close();
             wsRef.current = null;
             wsConnecting.current = false;
         };
@@ -504,6 +546,20 @@ export default function Sync() {
             const currentEl = panktiRefs.current[currentIndex];
             if (!container || !currentEl) return;
 
+            const contentKey = shabadState.shabadId || shabadState.banidId || null;
+            const isNewContent = contentKey !== lastContentKeyRef.current;
+
+            if (isNewContent) {
+                lastContentKeyRef.current = contentKey;
+
+                container.scrollTo({
+                    top: currentEl.offsetTop,
+                    behavior: "auto",
+                });
+
+                return;
+            }
+
             const containerRect = container.getBoundingClientRect();
             const currentRect = currentEl.getBoundingClientRect();
 
@@ -547,7 +603,13 @@ export default function Sync() {
                 });
             }
         });
-    }, [currentIndex, settings.shabadView]);
+    }, [
+        currentIndex,
+        settings.shabadView,
+        shabadState.shabadId,
+        shabadState.banidId,
+        panktis.length,
+    ]);
 
     const updateSetting = <K extends keyof DisplaySettings>(
         key: K,
