@@ -1,6 +1,6 @@
 import { usePage } from "@inertiajs/react";
 import axios from "axios";
-import { CheckSquare2, Eye, EyeOff, Square } from "lucide-react";
+import { CheckSquare2, Eye, EyeOff, Maximize, Minimize, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import "../../../css/font.css";
@@ -257,7 +257,7 @@ function GurmukhiText({
     const [fontSize, setFontSize] = useState(Math.max(baseFontSize, 60));
     const [useVishraamSplit, setUseVishraamSplit] = useState(false);
 
-    const minFontSize = 70;
+    const minFontSize = 20;
     const lineHeightRatio = 1.4;
     const maxLines = 2;
 
@@ -363,6 +363,8 @@ export default function Sync() {
     const lastContentKeyRef = useRef<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [visitedPanktis, setVisitedPanktis] = useState<Set<number>>(new Set());
+    const [showFullscreenButton, setShowFullscreenButton] = useState(true);
+    const hideTimer = useRef<number | null>(null);
 
     const [panktis, setPanktis] = useState<Pankti[]>([]);
     const [shabadState, setShabadState] = useState<{
@@ -376,6 +378,69 @@ export default function Sync() {
         panktis: [],
         current: null,
     });
+
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+            } else {
+                await document.exitFullscreen();
+            }
+        } catch (err) {
+            console.error("Fullscreen failed:", err);
+        }
+    };
+
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const showControls = () => {
+        setShowFullscreenButton(true);
+
+        if (hideTimer.current) {
+            clearTimeout(hideTimer.current);
+        }
+
+        hideTimer.current = window.setTimeout(() => {
+            setShowFullscreenButton(false);
+        }, 5000);
+    };
+
+    useEffect(() => {
+        const handler = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener("fullscreenchange", handler);
+
+        return () => document.removeEventListener("fullscreenchange", handler);
+    }, []);
+
+    useEffect(() => {
+        const events = [
+            "mousemove",
+            "mousedown",
+            "touchstart",
+            "touchmove",
+            "keydown",
+        ];
+
+        events.forEach((event) =>
+            window.addEventListener(event, showControls)
+        );
+
+        // Start the initial 5-second timer
+        showControls();
+
+        return () => {
+            events.forEach((event) =>
+                window.removeEventListener(event, showControls)
+            );
+
+            if (hideTimer.current) {
+                clearTimeout(hideTimer.current);
+            }
+        };
+    }, []);
 
     const [settings, setSettings] = useState<DisplaySettings>({
         xPadding: 4,
@@ -645,6 +710,20 @@ export default function Sync() {
                 }}
             />
 
+            <button
+                onClick={toggleFullscreen}
+                className={`
+                    fixed bottom-4 right-10 z-50
+                    rounded-full bg-black/70 p-3 text-white
+                    transition-all duration-300
+                    ${showFullscreenButton
+                        ? "opacity-100 pointer-events-auto"
+                        : "opacity-0 pointer-events-none"}
+                `}
+            >
+                {isFullscreen ? <Minimize size={22} /> : <Maximize size={22} />}
+            </button>
+
             {/* Settings Panel — only rendered when showSettings prop is true */}
             {showSettings && (
                 <div className="fixed top-0 left-0 z-10 bg-white h-screen rounded-2xl border p-4 shadow-sm overflow-y-auto space-y-5 w-64">
@@ -878,6 +957,7 @@ export default function Sync() {
             <div
                 ref={scrollContainerRef}
                 className={`
+                    hide-scrollbar
                     flex flex-col items-center
                     justify-start
                     flex-1 min-w-0 max-w-full h-screen max-h-screen
